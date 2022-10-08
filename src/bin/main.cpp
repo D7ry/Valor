@@ -1,8 +1,4 @@
-
-
-
-
-
+#include "hooks.h"
 void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {
@@ -17,6 +13,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 
 void onSKSEInit()
 {
+	hooks::on_attack_action::install(); /*Install this hook prior to all other plugins(SCAR, VC) to ensure attack cancellation consistency.*/
 }
 
 namespace

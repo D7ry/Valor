@@ -4,19 +4,6 @@
 #include  <iterator>
 #define CONSOLELOG(msg) 	RE::ConsoleLog::GetSingleton()->Print(msg);
 #define PI 3.1415926535897932384626
-//TODO:clear this up a bit
-namespace RE
-{
-	enum DIFFICULTY
-	{
-		kNovice = 0,
-		kApprentice = 1,
-		kAdept = 2,
-		kExpert = 3,
-		kMaster = 4,
-		kLegendary = 5
-	};
-};
 namespace inlineUtils
 {
 	inline static bool isEquippedShield(RE::Actor* a_actor) {
@@ -692,4 +679,21 @@ namespace DtryUtils
 			logger::info("Loaded {} settings from {}", _loadedSettings, _settingsFile);
 		}
 	};
+}
+
+
+constexpr uint32_t hash(const char* data, size_t const size) noexcept
+{
+	uint32_t hash = 5381;
+
+	for (const char* c = data; c < data + size; ++c) {
+		hash = ((hash << 5) + hash) + (unsigned char)*c;
+	}
+
+	return hash;
+}
+
+constexpr uint32_t operator"" _h(const char* str, size_t size) noexcept
+{
+	return hash(str, size);
 }
