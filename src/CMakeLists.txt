@@ -1,9 +1,20 @@
 set(ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
 set(SOURCE_DIR "${ROOT_DIR}/src")
-set(SOURCE_FILES
-	"${SOURCE_DIR}/bin/main.cpp"
-)
+file(GLOB_RECURSE SOURCE_FILES "${SOURCE_DIR}/*.cpp" "${SOURCE_DIR}/*.h" "${SOURCE_DIR}/*.hpp")	
+
+# 对 SourceFile 变量里面的所有文件分类(保留资源管理器的目录结构)
+foreach(fileItem ${SOURCE_FILES})       
+    # Get the directory of the source file
+    get_filename_component(PARENT_DIR "${fileItem}" DIRECTORY)
+    # Remove common directory prefix to make the group
+    string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" GROUP "${PARENT_DIR}")
+    # Make sure we are using windows slashes
+    string(REPLACE "/" "\\" GROUP "${GROUP}")
+    # Group into "Source Files" and "Header Files"
+    set(GROUP "${GROUP}")
+    source_group("${GROUP}" FILES "${fileItem}")
+endforeach()
 
 source_group(TREE "${ROOT_DIR}" FILES ${SOURCE_FILES})
 

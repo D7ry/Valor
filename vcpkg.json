@@ -1,5 +1,5 @@
 {
-  "name": "templateproject",
+  "name": "valgrind",
   "version": "1",
   "dependencies": [
     "fast-cpp-csv-parser",
