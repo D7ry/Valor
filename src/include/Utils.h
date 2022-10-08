@@ -2,6 +2,8 @@
 #include <cmath>
 #include  <random>
 #include  <iterator>
+#include "PCH.h"
+#include "bin/offsets.h"
 #define CONSOLELOG(msg) 	RE::ConsoleLog::GetSingleton()->Print(msg);
 #define PI 3.1415926535897932384626
 namespace inlineUtils
@@ -110,43 +112,6 @@ namespace inlineUtils
 		resetThread.detach();
 	}
 
-	/*Calculate the real hit damage based on game difficulty settings, and whether the player is aggressor/victim,
-	* assuming the damage is uncalculated raw damage.
-	@param damage: raw damage taken from hitdata.
-	@param aggressor: aggressor of this damage.
-	@param victim: victim of this damage.*/
-	inline void offsetRealDamage(float& damage, RE::Actor* aggressor, RE::Actor* victim) {
-		if ((aggressor) && (aggressor->IsPlayerRef() || aggressor->IsPlayerTeammate())) {
-			switch (RE::PlayerCharacter::GetSingleton()->difficulty) {
-			case RE::DIFFICULTY::kNovice: damage *= data::fDiffMultHPByPCVE; break;
-			case RE::DIFFICULTY::kApprentice: damage *= data::fDiffMultHPByPCE; break;
-			case RE::DIFFICULTY::kAdept: damage *= data::fDiffMultHPByPCN; break;
-			case RE::DIFFICULTY::kExpert: damage *= data::fDiffMultHPByPCH; break;
-			case RE::DIFFICULTY::kMaster: damage *= data::fDiffMultHPByPCVH; break;
-			case RE::DIFFICULTY::kLegendary: damage *= data::fDiffMultHPByPCL; break;
-			}
-		}
-		else if ((victim) && (victim->IsPlayerRef() || victim->IsPlayerTeammate())) {
-			switch (RE::PlayerCharacter::GetSingleton()->difficulty) {
-			case RE::DIFFICULTY::kNovice: damage *= data::fDiffMultHPToPCVE; break;
-			case RE::DIFFICULTY::kApprentice: damage *= data::fDiffMultHPToPCE; break;
-			case RE::DIFFICULTY::kAdept: damage *= data::fDiffMultHPToPCN; break;
-			case RE::DIFFICULTY::kExpert: damage *= data::fDiffMultHPToPCH; break;
-			case RE::DIFFICULTY::kMaster: damage *= data::fDiffMultHPToPCVH; break;
-			case RE::DIFFICULTY::kLegendary: damage *= data::fDiffMultHPToPCL; break;
-			}
-		}
-	}
-
-	inline void offsetRealDamageForPc(float& damage) {
-		offsetRealDamage(damage, nullptr, RE::PlayerCharacter::GetSingleton());
-	}
-
-	inline void safeApplySpell(RE::SpellItem* a_spell, RE::Actor* a_actor) {
-		if (a_actor && a_spell) {
-			a_actor->AddSpell(a_spell);
-		}
-	}
 
 	inline void safeRemoveSpell(RE::SpellItem* a_spell, RE::Actor* a_actor) {
 		if (a_actor && a_spell) {
@@ -215,65 +180,11 @@ namespace inlineUtils
 	
 };
 
-namespace TrueHUDUtils
-{
-
-	inline void flashActorValue(RE::Actor* a_actor, RE::ActorValue actorValue) {
-		if (!settings::facts::TrueHudAPI_Obtained) {
-			return;
-		}
-		if (a_actor) {
-			ValhallaCombat::GetSingleton()->ersh_TrueHUD->FlashActorValue(a_actor->GetHandle(), actorValue, true);
-		}	
-	}
-
-	inline void greyoutAvMeter(RE::Actor* a_actor, RE::ActorValue actorValue) {
-		if (!settings::facts::TrueHudAPI_Obtained) {
-			return;
-		}
-		auto ersh = ValhallaCombat::GetSingleton()->ersh_TrueHUD;
-		ersh->OverrideBarColor(a_actor->GetHandle(), actorValue, TRUEHUD_API::BarColorType::FlashColor, 0xd72a2a);
-		ersh->OverrideBarColor(a_actor->GetHandle(), actorValue, TRUEHUD_API::BarColorType::BarColor, 0x7d7e7d);
-		ersh->OverrideBarColor(a_actor->GetHandle(), actorValue, TRUEHUD_API::BarColorType::PhantomColor, 0xb30d10);
-	}
-
-	inline void revertAvMeter(RE::Actor* a_actor, RE::ActorValue actorValue) {
-		if (!settings::facts::TrueHudAPI_Obtained) {
-			return;
-		}
-		auto ersh = ValhallaCombat::GetSingleton()->ersh_TrueHUD;
-		ersh->RevertBarColor(a_actor->GetHandle(), actorValue, TRUEHUD_API::BarColorType::FlashColor);
-		ersh->RevertBarColor(a_actor->GetHandle(), actorValue, TRUEHUD_API::BarColorType::BarColor);
-		ersh->RevertBarColor(a_actor->GetHandle(), actorValue, TRUEHUD_API::BarColorType::PhantomColor);
-	}
-
-	inline void greyOutSpecialMeter(RE::Actor* a_actor) {
-		if (!settings::facts::TrueHudAPI_Obtained || !settings::facts::TrueHudAPI_HasSpecialBarControl) {
-			return;
-		}
-		auto ersh = ValhallaCombat::GetSingleton()->ersh_TrueHUD;
-		ersh->OverrideSpecialBarColor(a_actor->GetHandle(), TRUEHUD_API::BarColorType::FlashColor, 0xd72a2a);
-		ersh->OverrideSpecialBarColor(a_actor->GetHandle(), TRUEHUD_API::BarColorType::BarColor, 0x7d7e7d);
-		ersh->OverrideSpecialBarColor(a_actor->GetHandle(), TRUEHUD_API::BarColorType::PhantomColor, 0xb30d10);
-		ersh->OverrideBarColor(a_actor->GetHandle(), RE::ActorValue::kHealth, TRUEHUD_API::BarColorType::FlashColor, 0xd72a2a);
-	}
-
-	inline void revertSpecialMeter(RE::Actor* a_actor) {
-		if (!settings::facts::TrueHudAPI_Obtained || !settings::facts::TrueHudAPI_HasSpecialBarControl) {
-			return;
-		}
-		auto ersh = ValhallaCombat::GetSingleton()->ersh_TrueHUD;
-		ersh->RevertSpecialBarColor(a_actor->GetHandle(), TRUEHUD_API::BarColorType::FlashColor);
-		ersh->RevertSpecialBarColor(a_actor->GetHandle(), TRUEHUD_API::BarColorType::BarColor);
-		ersh->RevertSpecialBarColor(a_actor->GetHandle(), TRUEHUD_API::BarColorType::PhantomColor);
-		ersh->RevertBarColor(a_actor->GetHandle(), RE::ActorValue::kHealth, TRUEHUD_API::BarColorType::FlashColor);
-	}
-
-};
 
 class ValhallaUtils
 {
 public:
+
 	/*Whether the actor's back is facing the other actor's front.
 	@param actor1: actor whose facing will be returned
 	@param actor2: actor whose relative location to actor1 will be calculated.*/
