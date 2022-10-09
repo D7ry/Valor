@@ -9,6 +9,8 @@ public:
 		return &singleton;
 	}
 
+	void init();
+
 	void attempt_start_perilous_attack(RE::Actor* a_actor);
 
 	void attempt_end_perilous_attack(RE::Actor* a_actor);
@@ -19,5 +21,13 @@ private:
 	void perform_perilous_attack(RE::Actor* a_actor);
 
 	RE::SpellItem* perilousSpell;
+
+	RE::TESEffectShader* temp;
+
+	RE::Explosion* perilousExplosion;
+	
+	RE::TESObjectACTI* perilousExplosionNode;
+
+	RE::BGSSoundDescriptorForm* perilousSound;
 	
 };

@@ -43,5 +43,8 @@ namespace hooks
 		static inline REL::Relocation<decltype(ProcessEvent_NPC)> _ProcessEvent_PC;
 	};
 
+	inline void alloc() {
+		SKSE::AllocTrampoline(1 << 5);
+	}
 
 };

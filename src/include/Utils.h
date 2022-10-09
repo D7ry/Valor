@@ -629,26 +629,52 @@ namespace DtryUtils
 	class rayCast
 	{
 
-#define DEBUG_DRAW_HIT_COLOR 0xFFFF00      // yellow
-#define DEBUG_DRAW_RAYCAST_COLOR 0x00FF00 //green
+#define YELLOW 0xFFFF00      // yellow
+#define GREEN 0x40FF00 //green
 	public:
-		/*Cast a ray from the center of the actor, return the first object encountered, and nullptr if nothing is hit.*/
-		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, float a_pi, float a_length = 100.f) 
+		
+		/*Do a simple raycast at a singular point to check if anything exists there.*/
+		static bool object_exits(RE::NiPoint3 a_pos) 
+		{
+			RE::NiPoint3 rayStart = a_pos;
+			RE::NiPoint3 rayEnd = a_pos;
+			rayStart.z += 30.f;
+			rayEnd.z -= 30.f;
+			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
+			RE::bhkPickData pick_data;
+			pick_data.rayInput.from = rayStart * havokWorldScale;
+			pick_data.rayInput.to = rayEnd * havokWorldScale;
+			debug::getsingleton()->debugAPI->DrawArrow(rayStart, rayEnd, 10, 1);
+			auto pc = RE::PlayerCharacter::GetSingleton();
+			if (!pc) {
+				return false;
+			}
+			if (!pc->GetParentCell() || !pc->GetParentCell()->GetbhkWorld()) {
+				return false;
+			}
+			pc->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
+			if (pick_data.rayOutput.HasHit()) {
+				logger::info("object exists!");
+				RE::NiPoint3 hitpos = rayStart + (rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
+				debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3, GREEN);
+				return true;
+			}
+			return false;
+		}
+		/*Cast a ray from the center of the actor to a_rayEnd, return the first object encountered, or nullptr if nothing is hit.*/
+		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd) 
 		{
 			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
 			RE::bhkPickData pick_data;
 			RE::NiPoint3 rayStart = a_actor->GetPosition();
 			float castHeight = a_actor->GetHeight() * 0.5f;
 			rayStart.z += castHeight;  //cast from center of actor
-			RE::NiPoint3 rayEnd_relative = { a_length * sin(a_pi * PI), a_length * cos(a_pi * PI), castHeight };
-			RE::NiPoint3 rayEnd = inlineUtils::get_abs_pos(a_actor, rayEnd_relative);
-			logger::info("casting ray. Raystartx :{}, y:{}, z:{}, rayendx:{}, y:{}, z:{}", rayStart.x, rayStart.y, rayStart.z, rayEnd.x, rayEnd.y, rayEnd.z);
-			/*Setup ray*/
+						/*Setup ray*/
 			pick_data.rayInput.from = rayStart * havokWorldScale;
-			pick_data.rayInput.to = rayEnd * havokWorldScale;
-			debug::getsingleton()->debugAPI->DrawArrow(rayStart, rayEnd, 10, 1);
+			pick_data.rayInput.to = a_rayEnd * havokWorldScale;
+			debug::getsingleton()->debugAPI->DrawArrow(rayStart, a_rayEnd, 10, 1);
 			
-			/*Setup collision filter, ignorint the actor.*/
+			/*Setup collision filter, ignoring the actor.*/
 			uint32_t collisionFilterInfo = 0;
 			a_actor->GetCollisionFilterInfo(collisionFilterInfo);
 			uint16_t collisionGroup = collisionFilterInfo >> 16;
@@ -657,7 +683,8 @@ namespace DtryUtils
 			/*Do*/
 			a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
 			if (pick_data.rayOutput.HasHit()) {
-				RE::NiPoint3 hitpos = rayStart + (rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
+				logger::info("rayhit!");
+				RE::NiPoint3 hitpos = rayStart + (a_rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
 				debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3);
 
 				auto collidable = pick_data.rayOutput.rootCollidable;

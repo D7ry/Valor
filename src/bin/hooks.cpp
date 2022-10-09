@@ -1,6 +1,8 @@
 #include "hooks.h"
 #include "settings.h"
 #include "perilous.h"
+#include "dodge.h"
+
 #include "include/Utils.h"
 namespace hooks
 {
@@ -17,14 +19,15 @@ namespace hooks
 	bool on_attack_action::perform_atk_action(RE::TESActionData* a_actionData)
 	{
 		if (!a_actionData) {
-			return;
+			return false;
 		}
 		if (!a_actionData->Subject_8) {
-			return;
+			return false;
 		}
 		RE::Actor* actor = a_actionData->Subject_8->As<RE::Actor>();
 		
 		if (settings::bEnablePerilousAttack) {
+			logger::info("processing perilous attack!");
 			perilous::GetSingleton()->attempt_start_perilous_attack(actor);
 		}
 
@@ -38,6 +41,8 @@ namespace hooks
 		}
 		std::string_view eventTag = a_event->tag.data();
 		switch (hash(eventTag.data(), eventTag.size())) {
+		case "preHitFrame"_h:
+			dodge::GetSingleton()->passive_dodge(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 		case "attackStop"_h:
 			perilous::GetSingleton()->attempt_end_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 		}

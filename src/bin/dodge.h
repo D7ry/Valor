@@ -11,7 +11,9 @@ public:
 		return &singleton;
 	}
 	
-	void attempt_dodge(RE::Actor* a_actor, RE::Actor* a_attacker);
+	static bool callback_func(RE::TESObjectREFR& a_ref);
+
+	void passive_dodge(RE::Actor* a_attacker);
 
 private:
 	enum dodge_direction
@@ -30,7 +32,8 @@ private:
 	void do_dodge(RE::Actor* a_actor, dodge_direction a_direction);
 
 	RE::NiPoint3 get_dodge_vector(dodge_direction a_direction);
-	int get_dodge_angle(dodge_direction a_direction);
 	
+	void attempt_dodge(RE::Actor* a_actor, RE::Actor* a_attacker);
+
 	
 };
