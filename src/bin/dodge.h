@@ -3,7 +3,14 @@
 #include "include/lib/TrueHUDAPI.h"
 class dodge
 {
+private:
+	std::random_device rd;
+
 public:
+	dodge()
+	{
+		std::mt19937(rd);  // seed PRNG
+	}
 	
 	static dodge* GetSingleton()
 	{
@@ -11,11 +18,12 @@ public:
 		return &singleton;
 	}
 	
-	static bool callback_func(RE::TESObjectREFR& a_ref);
+	static bool attempt_passive_dodge(RE::TESObjectREFR& a_ref);
 
 	void passive_dodge(RE::Actor* a_attacker);
 
 private:
+	
 	enum dodge_direction
 	{
 		forward,
@@ -33,7 +41,11 @@ private:
 
 	RE::NiPoint3 get_dodge_vector(dodge_direction a_direction);
 	
-	void attempt_dodge(RE::Actor* a_actor, RE::Actor* a_attacker);
+	void attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions);
+
+	static inline const std::vector<dodge_direction> dodge_directions_horizontal = { dodge_direction::left, dodge_direction::right };
+	static inline const std::vector<dodge_direction> dodge_directions_vertical = { dodge_direction::forward, dodge_direction::back };
+	static inline const std::vector<dodge_direction> dodge_directions_all = { dodge_direction::forward, dodge_direction::back, dodge_direction::left, dodge_direction::right };
 
 	
 };

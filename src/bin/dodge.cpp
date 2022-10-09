@@ -1,10 +1,11 @@
 #include "dodge.h"
 #include "include/Utils.h"
 #include "include/lib/TrueHUDAPI.h"
+#include <algorithm>
 #define PI 3.1415926535f
 
 
-bool dodge::callback_func(RE::TESObjectREFR& a_ref)
+bool dodge::attempt_passive_dodge(RE::TESObjectREFR& a_ref)
 {
 	if (a_ref.GetFormType() != RE::FormType::ActorCharacter) {
 		return true;
@@ -16,7 +17,7 @@ bool dodge::callback_func(RE::TESObjectREFR& a_ref)
 	
 	auto skeleton = a_ref.As<RE::Actor>()->GetRace()->skeletonModels->GetModel();
 	if (strcmp(skeleton, "Actors\Character\Character Assets\skeleton.nif")) {
-		dodge::GetSingleton()->attempt_dodge(actor, nullptr);
+		dodge::GetSingleton()->attempt_dodge(actor, dodge_directions_all);
 	}
 
 	return true;
@@ -27,30 +28,26 @@ void dodge::passive_dodge(RE::Actor* a_attacker)
 	if (!a_attacker->IsPlayerRef()) {
 		return; // dodge player for now.
 	}
-	RE::TES::GetSingleton()->ForEachReferenceInRange(a_attacker, 200, &callback_func);
+	RE::TES::GetSingleton()->ForEachReferenceInRange(a_attacker, 200, &attempt_passive_dodge);
 }
 
-void dodge::attempt_dodge(RE::Actor* a_actor, RE::Actor* a_attacker)
+void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions)
 {
-	const dodge_direction dodge_directions[]{
-		// TODO: use PRND to determine dodge direction
-		dodge_direction::back,
-		dodge_direction::left,
-		dodge_direction::right,
-		dodge_direction::forward,
-	};
 	
 	if (!able_dodge(a_actor)) {
 		return;
 	}
 
-	for (auto direction : dodge_directions) { //see where i can dodge
-		RE::NiPoint3 dodge_dest = inlineUtils::get_abs_pos(a_actor, get_dodge_vector(direction));
+	std::shuffle(a_directions.begin(), a_directions.end(), rd);  //shuffle directions
+
+	for (auto it = a_directions.begin(); it != a_directions.end(); ++it) {
+		dodge_direction direction = *it;
+		RE::NiPoint3 dodge_dest = inlineUtils::get_abs_pos(a_actor, get_dodge_vector(*it));
 		if (can_goto(a_actor, dodge_dest)) {
-			logger::info("{} can go to {}, dodging", a_actor->GetName(), direction);
 			do_dodge(a_actor, direction);
 			return;
 		}
+		do_dodge(a_actor, *it);
 	}
 	
 }
@@ -114,6 +111,7 @@ void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)
 		break;
 	}
 }
+#define DODGE_DIST 250
 /*Get relative dodge vector*/
 RE::NiPoint3 dodge::get_dodge_vector(dodge_direction a_direction)
 {
@@ -121,21 +119,21 @@ RE::NiPoint3 dodge::get_dodge_vector(dodge_direction a_direction)
 	switch (a_direction) {
 	case forward:
 		ret.x = 0;
-		ret.y = 200;
+		ret.y = DODGE_DIST;
 		ret.z = 0;
 		break;
 	case back:
 		ret.x = 0;
-		ret.y = -200;
+		ret.y = -DODGE_DIST;
 		ret.z = 0;
 		break;
 	case left:
-		ret.x = -200;
+		ret.x = -DODGE_DIST;
 		ret.y = 0;
 		ret.z = 0;
 		break;
 	case right:
-		ret.x = 200;
+		ret.x = DODGE_DIST;
 		ret.y = 0;
 		ret.z = 0;
 		break;
