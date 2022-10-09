@@ -4,7 +4,6 @@
 class dodge
 {
 public:
-	TRUEHUD_API::IVTrueHUD3* debugAPI;
 	
 	static dodge* GetSingleton()
 	{
@@ -22,7 +21,9 @@ private:
 		left,
 		right
 	};
-	bool can_dodge(RE::Actor* a_actor);
+	bool able_dodge(RE::Actor* a_actor);
+
+	bool can_dodge_do_position(RE::Actor* a_actor, RE::NiPoint3 a_pos);
 	
 	dodge_direction get_dodge_direction(RE::Actor* a_actor, RE::Actor* a_attacker);
 

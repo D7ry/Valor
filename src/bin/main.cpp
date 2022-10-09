@@ -1,12 +1,14 @@
+#pragma once
 #include "hooks.h"
 #include "perilous.h"
 #include "dodge.h"
+#include "include/Utils.h"
+
 void initTrueHUDAPI()
 {
-	dodge* dodgeSingleton = dodge::GetSingleton();
-	dodgeSingleton->debugAPI = reinterpret_cast<TRUEHUD_API::IVTrueHUD3*>(TRUEHUD_API::RequestPluginAPI(TRUEHUD_API::InterfaceVersion::V3));
-	if (dodgeSingleton->debugAPI) {
-		logger::info("Obtained TruehudAPI - {0:x}", (uintptr_t)dodgeSingleton->debugAPI);
+	debug::getsingleton()->debugAPI = reinterpret_cast<TRUEHUD_API::IVTrueHUD3*>(TRUEHUD_API::RequestPluginAPI(TRUEHUD_API::InterfaceVersion::V3));
+	if (debug::getsingleton()->debugAPI) {
+		logger::info("Obtained TruehudAPI - {0:x}", (uintptr_t)debug::getsingleton()->debugAPI);
 	} else {
 		logger::info("TrueHUD API not found.");
 	}

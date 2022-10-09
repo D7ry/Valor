@@ -4,10 +4,45 @@
 #include  <iterator>
 #include "PCH.h"
 #include "bin/offsets.h"
-#define CONSOLELOG(msg) 	RE::ConsoleLog::GetSingleton()->Print(msg);
-#define PI 3.1415926535897932384626
+#include "include/lib/TrueHUDAPI.h"
+
+#define CONSOLELOG(msg) RE::ConsoleLog::GetSingleton()->Print(msg);
+#define PI 3.1415926535897932384626f
+class debug
+{
+public:
+	static debug* getsingleton() {
+		static debug singleton;
+		return &singleton;
+	}
+
+	TRUEHUD_API::IVTrueHUD3* debugAPI;
+};
+
 namespace inlineUtils
 {
+	/*Get the absolute position of a point in world, given a relative position to an actor.*/
+	inline static RE::NiPoint3 get_abs_pos(RE::Actor* a_actor, RE::NiPoint3 a_relative_pos)  // Hacked this together in a very short time; there might be better solutions.
+	{
+		float len = sqrt(a_relative_pos.x * a_relative_pos.x + a_relative_pos.y * a_relative_pos.y);
+		float actorAngleZ = a_actor->GetAngleZ();
+		actorAngleZ -= 2 * actorAngleZ; /*Invert angle across axis*/
+
+		float vecAngle = atan2(a_relative_pos.y, a_relative_pos.x);
+		float vecAngleZ = actorAngleZ + vecAngle;
+
+		float x_displacement = len * cos(vecAngleZ);
+		float y_displacement = len * sin(vecAngleZ);
+		float z_displacement = a_relative_pos.z;
+
+		RE::NiPoint3 abs_pos = a_actor->GetPosition();
+		abs_pos.x += x_displacement;
+		abs_pos.y += y_displacement;
+		abs_pos.z += z_displacement;
+
+		return abs_pos;
+	}
+	
 	inline static bool isEquippedShield(RE::Actor* a_actor) {
 		return RE::Offset::getEquippedShield(a_actor) != nullptr;
 	}
@@ -588,6 +623,52 @@ namespace DtryUtils
 
 		void log() {
 			logger::info("Loaded {} settings from {}", _loadedSettings, _settingsFile);
+		}
+	};
+
+	class rayCast
+	{
+
+#define DEBUG_DRAW_HIT_COLOR 0xFFFF00      // yellow
+#define DEBUG_DRAW_RAYCAST_COLOR 0x00FF00 //green
+	public:
+		/*Cast a ray from the center of the actor, return the first object encountered, and nullptr if nothing is hit.*/
+		RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, float a_pi, float a_length = 100.f) 
+		{
+			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
+			RE::bhkPickData pick_data;
+			RE::NiPoint3 rayStart = a_actor->GetPosition();
+			float castHeight = a_actor->GetHeight() * 0.5f;
+			rayStart.z += castHeight;  //cast from center of actor
+			RE::NiPoint3 rayEnd_relative = { a_length * cos(a_pi * PI), a_length * sin(a_pi * PI), castHeight};
+			RE::NiPoint3 rayEnd = inlineUtils::get_abs_pos(a_actor, rayEnd_relative);
+			logger::info("casting ray. Raystartx :{}, y:{}, z:{}, rayendx:{}, y:{}, z:{}", rayStart.x, rayStart.y, rayStart.z, rayEnd.x, rayEnd.y, rayEnd.z);
+			/*Setup ray*/
+			pick_data.rayInput.from = rayStart * havokWorldScale;
+			pick_data.rayInput.to = rayEnd * havokWorldScale;
+			debug::getsingleton()->debugAPI->DrawArrow(rayStart, rayEnd, 10, 1);
+			
+			/*Setup collision filter, ignorint the actor.*/
+			uint32_t collisionFilterInfo = 0;
+			a_actor->GetCollisionFilterInfo(collisionFilterInfo);
+			uint16_t collisionGroup = collisionFilterInfo >> 16;
+			pick_data.rayInput.filterInfo = (static_cast<uint32_t>(collisionGroup) << 16) | static_cast<uint32_t>(RE::COL_LAYER::kCharController);
+			
+			/*Do*/
+			a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
+			if (pick_data.rayOutput.HasHit()) {
+				RE::NiPoint3 hitpos = rayStart + (rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
+				debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3);
+
+				auto collidable = pick_data.rayOutput.rootCollidable;
+				if (collidable) {
+					RE::TESObjectREFR* ref = RE::TESHavokUtilities::FindCollidableRef(*collidable);
+					if (ref) {
+						return ref;
+					}
+				}
+			}
+			return nullptr;
 		}
 	};
 }
