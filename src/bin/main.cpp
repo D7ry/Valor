@@ -1,10 +1,26 @@
 #include "hooks.h"
+#include "perilous.h"
+#include "dodge.h"
+void initTrueHUDAPI()
+{
+	dodge* dodgeSingleton = dodge::GetSingleton();
+	dodgeSingleton->debugAPI = reinterpret_cast<TRUEHUD_API::IVTrueHUD3*>(TRUEHUD_API::RequestPluginAPI(TRUEHUD_API::InterfaceVersion::V3));
+	if (dodgeSingleton->debugAPI) {
+		logger::info("Obtained TruehudAPI - {0:x}", (uintptr_t)dodgeSingleton->debugAPI);
+	} else {
+		logger::info("TrueHUD API not found.");
+	}
+}
+
 void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 {
 	switch (a_msg->type) {
 	case SKSE::MessagingInterface::kDataLoaded:
+		perilous::GetSingleton()->init();
+		hooks::on_animation_event::install();
 		break;
 	case SKSE::MessagingInterface::kPostLoad:
+		initTrueHUDAPI();
 		break;
 	case SKSE::MessagingInterface::kPostLoadGame:
 		break;
@@ -13,6 +29,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 
 void onSKSEInit()
 {
+	hooks::alloc();
 	hooks::on_attack_action::install(); /*Install this hook prior to all other plugins(SCAR, VC) to ensure attack cancellation consistency.*/
 }
 
