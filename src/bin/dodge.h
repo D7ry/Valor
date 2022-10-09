@@ -23,13 +23,14 @@ private:
 	};
 	bool able_dodge(RE::Actor* a_actor);
 
-	bool can_dodge_do_position(RE::Actor* a_actor, RE::NiPoint3 a_pos);
+	bool can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest);
 	
 	dodge_direction get_dodge_direction(RE::Actor* a_actor, RE::Actor* a_attacker);
 
 	void do_dodge(RE::Actor* a_actor, dodge_direction a_direction);
 
 	RE::NiPoint3 get_dodge_vector(dodge_direction a_direction);
+	int get_dodge_angle(dodge_direction a_direction);
 	
 	
 };

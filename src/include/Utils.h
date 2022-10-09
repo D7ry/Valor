@@ -633,14 +633,14 @@ namespace DtryUtils
 #define DEBUG_DRAW_RAYCAST_COLOR 0x00FF00 //green
 	public:
 		/*Cast a ray from the center of the actor, return the first object encountered, and nullptr if nothing is hit.*/
-		RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, float a_pi, float a_length = 100.f) 
+		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, float a_pi, float a_length = 100.f) 
 		{
 			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
 			RE::bhkPickData pick_data;
 			RE::NiPoint3 rayStart = a_actor->GetPosition();
 			float castHeight = a_actor->GetHeight() * 0.5f;
 			rayStart.z += castHeight;  //cast from center of actor
-			RE::NiPoint3 rayEnd_relative = { a_length * cos(a_pi * PI), a_length * sin(a_pi * PI), castHeight};
+			RE::NiPoint3 rayEnd_relative = { a_length * sin(a_pi * PI), a_length * cos(a_pi * PI), castHeight };
 			RE::NiPoint3 rayEnd = inlineUtils::get_abs_pos(a_actor, rayEnd_relative);
 			logger::info("casting ray. Raystartx :{}, y:{}, z:{}, rayendx:{}, y:{}, z:{}", rayStart.x, rayStart.y, rayStart.z, rayEnd.x, rayEnd.y, rayEnd.z);
 			/*Setup ray*/
@@ -670,6 +670,8 @@ namespace DtryUtils
 			}
 			return nullptr;
 		}
+				
+		
 	};
 }
 
