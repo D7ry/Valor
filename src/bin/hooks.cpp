@@ -42,7 +42,7 @@ namespace hooks
 		std::string_view eventTag = a_event->tag.data();
 		switch (hash(eventTag.data(), eventTag.size())) {
 		case "preHitFrame"_h:
-			dodge::GetSingleton()->passive_dodge(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
+			dodge::GetSingleton()->react_to_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 		case "attackStop"_h:
 			perilous::GetSingleton()->attempt_end_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 		}
@@ -58,6 +58,38 @@ namespace hooks
 	{
 		ProcessEvent(a_sink, a_event, a_eventSource);
 		return _ProcessEvent_PC(a_sink, a_event, a_eventSource);
+	}
+
+	ptr_CombatPath on_combatBehavior_backoff_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
+	{
+		logger::info("backoff path");
+		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::back });
+		
+		return _create_path(a_actor, a_newPos, a3, speed_ind);
+	}
+
+	ptr_CombatPath on_combatBehavior_circle_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
+	{
+		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::back, dodge::dodge_direction::left, dodge::dodge_direction::right });
+		
+
+		return _create_path(a_actor, a_newPos, a3, speed_ind);
+	}
+
+	ptr_CombatPath on_combatBehavior_fallback_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
+	{
+		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::back });
+		
+
+		return _create_path(a_actor, a_newPos, a3, speed_ind);
+	}
+
+	ptr_CombatPath on_combatBehavior_dodgethreat_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
+	{
+		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::left, dodge::dodge_direction::right });
+
+		return _create_path(a_actor, a_newPos, a3, speed_ind);
+
 	}
 
 };

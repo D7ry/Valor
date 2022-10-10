@@ -420,16 +420,17 @@ namespace DtryUtils
 	{
 
 #define YELLOW 0xFFFF00      // yellow
-#define GREEN 0x40FF00 //green
+#define GREEN 0xff00ff   //green
 	public:
-		
-		/*Do a simple raycast at a singular point to check if anything exists there.*/
-		static bool object_exits(RE::NiPoint3 a_pos) 
+
+		/*Do a simple raycast at a singular point to check if anything exists there.
+		If anything exists, update A_POS argument to the position where raycast is hit.*/
+		static bool object_exists(RE::NiPoint3& a_pos, float a_range = 30.f) 
 		{
 			RE::NiPoint3 rayStart = a_pos;
 			RE::NiPoint3 rayEnd = a_pos;
-			rayStart.z += 30.f;
-			rayEnd.z -= 30.f;
+			rayStart.z += a_range;
+			rayEnd.z -= a_range;
 			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
 			RE::bhkPickData pick_data;
 			pick_data.rayInput.from = rayStart * havokWorldScale;
@@ -444,20 +445,20 @@ namespace DtryUtils
 			}
 			pc->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
 			if (pick_data.rayOutput.HasHit()) {
-				logger::info("object exists!");
 				RE::NiPoint3 hitpos = rayStart + (rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
+				a_pos = hitpos;  //update the position to the hit position
 				debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3, GREEN);
 				return true;
 			}
 			return false;
 		}
 		/*Cast a ray from the center of the actor to a_rayEnd, return the first object encountered, or nullptr if nothing is hit.*/
-		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd) 
+		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd, float a_castPos = 0.5f) 
 		{
 			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
 			RE::bhkPickData pick_data;
 			RE::NiPoint3 rayStart = a_actor->GetPosition();
-			float castHeight = a_actor->GetHeight() * 0.5f;
+			float castHeight = a_actor->GetHeight() * a_castPos;
 			rayStart.z += castHeight;  //cast from center of actor
 						/*Setup ray*/
 			pick_data.rayInput.from = rayStart * havokWorldScale;
