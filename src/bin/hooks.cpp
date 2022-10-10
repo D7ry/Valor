@@ -62,14 +62,23 @@ namespace hooks
 
 	ptr_CombatPath on_combatBehavior_backoff_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::back });
+		switch (settings::iDodgeFramework) {
+		case 0:
+			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_back);
+			break;
+
+		}
 		
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
 	}
 
 	ptr_CombatPath on_combatBehavior_circle_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::back, dodge::dodge_direction::left, dodge::dodge_direction::right });
+		switch (settings::iDodgeFramework) {
+		case 0:
+			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_horizontal);
+			break;
+		}
 		
 
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
@@ -77,15 +86,23 @@ namespace hooks
 
 	ptr_CombatPath on_combatBehavior_fallback_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::back });
+		switch (settings::iDodgeFramework) {
+		case 0:
+			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge::dodge_directions_tk_back);
+			break;
+		}
 		
-
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
 	}
 
 	ptr_CombatPath on_combatBehavior_dodgethreat_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::left, dodge::dodge_direction::right });
+		switch (settings::iDodgeFramework) {
+		case 0:
+			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_all);
+			break;
+		}
+		
 
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
 

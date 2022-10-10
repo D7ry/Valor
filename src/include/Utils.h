@@ -456,7 +456,7 @@ namespace DtryUtils
 			return false;
 		}
 		/*Cast a ray from the center of the actor to a_rayEnd, return the first object encountered, or nullptr if nothing is hit.*/
-		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd, float a_castPos = 0.5f) 
+		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd, float a_castPos = 0.5f, float* ret_rayDist = nullptr) 
 		{
 			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
 			RE::bhkPickData pick_data;
@@ -480,6 +480,9 @@ namespace DtryUtils
 			a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
 			if (pick_data.rayOutput.HasHit()) {
 				RE::NiPoint3 hitpos = rayStart + (a_rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
+				if (ret_rayDist) {
+					*ret_rayDist = hitpos.GetDistance(rayStart);
+				}
 				if (settings::bEnableDebugDraw) {
 					debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3);
 				}

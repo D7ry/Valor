@@ -11,13 +11,20 @@ bool dodge::attempt_active_dodge(RE::TESObjectREFR& a_ref)
 		return true;
 	}
 	RE::Actor* actor = a_ref.As<RE::Actor>();
-	if (actor->IsPlayerRef() || actor->IsDead()) {
+	if (actor->IsPlayerRef() || actor->IsDead() || !actor->Is3DLoaded() || actor->IsBleedingOut()) {
 		return true;
 	}
 
 	auto skeleton = a_ref.As<RE::Actor>()->GetRace()->skeletonModels->GetModel();
 	if (strcmp(skeleton, "Actors\Character\Character Assets\skeleton.nif")) {
-		dodge::GetSingleton()->attempt_dodge(actor, dodge_directions_all);
+		switch (settings::iDodgeFramework) {
+		case 0:
+			dodge::GetSingleton()->attempt_dodge(actor, dodge_directions_tk_all);
+			break;
+		case 1:
+			dodge::GetSingleton()->attempt_dodge(actor, dodge_directions_dmco_all);
+			break;
+		}
 	}
 
 	return true;
@@ -100,13 +107,14 @@ bool dodge::can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest)
 			debug::getsingleton()->debugAPI->DrawLine(a_actor->GetPosition(), dest, 1.f, 0xff00ff);  //green line
 		}
 		
-		/*Cast a ray from the centre of the actor to the destination. If the raycast gets nothing, nothing significant is on the way.*/
+		/*Cast 4 rays from the actor, parallel to the dodging path to check for any obstacles.*/
+		float obstacleDist = 0; /*Distance to the obstacle, if any*/
 		dest.z += a_actor->GetHeight() * 1 / 4;
-		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.25f) == nullptr;
+		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.25f, &obstacleDist) == nullptr || obstacleDist >= settings::iPermissibleDodgeDistance;
 		dest.z += a_actor->GetHeight() * 1 / 4;
-		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.5f) == nullptr;
+		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.5f, &obstacleDist) == nullptr || obstacleDist >= settings::iPermissibleDodgeDistance;
 		dest.z += a_actor->GetHeight() * 1 / 4;
-		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.75f) == nullptr;
+		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.75f, &obstacleDist) == nullptr || obstacleDist >= settings::iPermissibleDodgeDistance;
 	}
 	
 
@@ -118,49 +126,75 @@ bool dodge::can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest)
 /*Get the direction the actor should dodge in.*/
 dodge::dodge_direction dodge::get_dodge_direction(RE::Actor* a_actor, RE::Actor* a_attacker)
 {
-	return dodge_direction::forward; /*defaults to backward dodging for now*/
+	return dodge_direction::kForward; /*defaults to backward dodging for now*/
 }
 
 void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)
 {
 	switch (a_direction) {
-	case dodge_direction::forward:
-		a_actor->NotifyAnimationGraph("TKDodgeForward");
+	case dodge_direction::kForward:
+		switch (settings::iDodgeFramework) {
+		case 0: 
+			a_actor->NotifyAnimationGraph("TKDodgeForward");
+			break;
+		case 1:
+			a_actor->NotifyAnimationGraph("Dodge");
+		}
 		break;
-	case dodge_direction::back:
-		a_actor->NotifyAnimationGraph("TKDodgeBack");
+	case dodge_direction::kBackward:
+		switch (settings::iDodgeFramework) {
+		case 0:
+			a_actor->NotifyAnimationGraph("TKDodgeBack");
+			break;
+		}
 		break;
-	case dodge_direction::left:
-		a_actor->NotifyAnimationGraph("TKDodgeLeft");
+	case dodge_direction::kLeft:
+		switch (settings::iDodgeFramework) {
+		case 0:
+			a_actor->NotifyAnimationGraph("TKDodgeLeft");
+			break;
+		}
 		break;
-	case dodge_direction::right:
-		a_actor->NotifyAnimationGraph("TKDodgeRight");
+	case dodge_direction::kRight:
+		switch (settings::iDodgeFramework) {
+		case 0:
+			a_actor->NotifyAnimationGraph("TKDodgeRight");
+			break;
+		}
+		break;
+	/*Only possible for DMCO*/
+	case dodge_direction::kLeftBackward:
+		break;
+	case dodge_direction::kLeftForward:
+		break;
+	case dodge_direction::kRightBackward:
+		break;
+	case dodge_direction::kRightForward:
 		break;
 	}
 }
-#define DODGE_DIST 275
 /*Get relative dodge vector*/
 RE::NiPoint3 dodge::get_dodge_vector(dodge_direction a_direction)
 {
 	RE::NiPoint3 ret;
 	switch (a_direction) {
-	case forward:
+	case kForward:
 		ret.x = 0;
-		ret.y = DODGE_DIST;
+		ret.y = settings::iDodgeDistance;
 		ret.z = 0;
 		break;
-	case back:
+	case kBackward:
 		ret.x = 0;
-		ret.y = -DODGE_DIST;
+		ret.y = -settings::iDodgeDistance;
 		ret.z = 0;
 		break;
-	case left:
-		ret.x = -DODGE_DIST;
+	case kLeft:
+		ret.x = -settings::iDodgeDistance;
 		ret.y = 0;
 		ret.z = 0;
 		break;
-	case right:
-		ret.x = DODGE_DIST;
+	case kRight:
+		ret.x = settings::iDodgeDistance;
 		ret.y = 0;
 		ret.z = 0;
 		break;

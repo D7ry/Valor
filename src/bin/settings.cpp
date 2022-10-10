@@ -10,6 +10,9 @@ void settings::read()
 	reader.load(bEnableDodgeAI, "bEnableDodgeAI");
 	reader.load(bEnableDodgeAI_passive, "bEnableDodgeAI_passive");
 	reader.load(bEnableDodgeAI_active, "bEnableDodgeAI_active");
+	reader.load(iDodgeFramework, "iDodgeFramework");
+	reader.load(iDodgeDistance, "iDodgeDistance");
+	reader.load(iPermissibleDodgeDistance, "iPermissibleDodgeDistance");
 	reader.log();
 	
 }
