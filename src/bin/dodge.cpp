@@ -5,26 +5,27 @@
 #define PI 3.1415926535f
 
 
-bool dodge::attempt_active_dodge(RE::TESObjectREFR& a_ref)
+bool dodge::attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker)
 {
-	if (a_ref.GetFormType() != RE::FormType::ActorCharacter) {
+	if (a_dodger->IsPlayerRef() || a_dodger->IsDead() || !a_dodger->Is3DLoaded() || a_dodger->IsBleedingOut() || a_dodger->IsInKillMove()) {
 		return true;
 	}
-	RE::Actor* actor = a_ref.As<RE::Actor>();
-	if (actor->IsPlayerRef() || actor->IsDead() || !actor->Is3DLoaded() || actor->IsBleedingOut()) {
+	
+	if (a_dodger->GetCombatGroup() == a_attacker->GetCombatGroup()) {
+		return true;
+	}
+	
+	if (a_dodger->IsPlayerTeammate() && (a_attacker->IsPlayerRef() || a_attacker->IsPlayerTeammate())) {
 		return true;
 	}
 
-	auto skeleton = a_ref.As<RE::Actor>()->GetRace()->skeletonModels->GetModel();
-	if (strcmp(skeleton, "Actors\Character\Character Assets\skeleton.nif")) {
-		switch (settings::iDodgeFramework) {
-		case 0:
-			dodge::GetSingleton()->attempt_dodge(actor, dodge_directions_tk_all);
-			break;
-		case 1:
-			dodge::GetSingleton()->attempt_dodge(actor, dodge_directions_dmco_all);
-			break;
-		}
+	switch (settings::iDodgeFramework) {
+	case 0:
+		dodge::GetSingleton()->attempt_dodge(a_dodger, dodge_directions_tk_all);
+		break;
+	case 1:
+		dodge::GetSingleton()->attempt_dodge(a_dodger, dodge_directions_dmco_all);
+		break;
 	}
 
 	return true;
@@ -37,10 +38,18 @@ void dodge::react_to_attack(RE::Actor* a_attacker)
 	if (!settings::bEnableDodgeAI_active) {
 		return;
 	}
-	if (!a_attacker->IsPlayerRef()) {
-		return; // dodge player for now.
-	}
-	RE::TES::GetSingleton()->ForEachReferenceInRange(a_attacker, 200, &attempt_active_dodge);
+	//if (!a_attacker->IsPlayerRef()) {
+	//	return; // dodge player for now.
+	//}
+
+	RE::TES::GetSingleton()->ForEachReference([&a_attacker](RE::TESObjectREFR& _refr) {
+		if (!_refr.IsDisabled() && _refr.GetFormType() == RE::FormType::ActorCharacter && _refr.GetPosition().GetDistance(a_attacker->GetPosition()) < 350.f) {
+			RE::Actor* refr = _refr.As<RE::Actor>();
+			attempt_active_dodge(refr, a_attacker);
+		}
+			
+		return true;
+	});
 }
 
 /*Attempt to dodge an incoming threat, choosing one of the directions from A_DIRECTIONS.*/

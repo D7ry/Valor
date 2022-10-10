@@ -32,7 +32,7 @@ public:
 		return &singleton;
 	}
 	
-	static bool attempt_active_dodge(RE::TESObjectREFR& a_ref);
+	static bool attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker);
 	
 	void attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions);
 
