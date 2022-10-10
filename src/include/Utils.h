@@ -5,6 +5,7 @@
 #include "PCH.h"
 #include "bin/offsets.h"
 #include "include/lib/TrueHUDAPI.h"
+#include "bin/settings.h"
 
 #define CONSOLELOG(msg) RE::ConsoleLog::GetSingleton()->Print(msg);
 #define PI 3.1415926535897932384626f
@@ -435,7 +436,9 @@ namespace DtryUtils
 			RE::bhkPickData pick_data;
 			pick_data.rayInput.from = rayStart * havokWorldScale;
 			pick_data.rayInput.to = rayEnd * havokWorldScale;
-			debug::getsingleton()->debugAPI->DrawArrow(rayStart, rayEnd, 10, 1);
+			if (settings::bEnableDebugDraw) {
+				debug::getsingleton()->debugAPI->DrawArrow(rayStart, rayEnd, 10, 1);
+			}
 			auto pc = RE::PlayerCharacter::GetSingleton();
 			if (!pc) {
 				return false;
@@ -463,7 +466,9 @@ namespace DtryUtils
 						/*Setup ray*/
 			pick_data.rayInput.from = rayStart * havokWorldScale;
 			pick_data.rayInput.to = a_rayEnd * havokWorldScale;
-			debug::getsingleton()->debugAPI->DrawArrow(rayStart, a_rayEnd, 10, 1);
+			if (settings::bEnableDebugDraw) {
+				debug::getsingleton()->debugAPI->DrawArrow(rayStart, a_rayEnd, 10, 1);
+			}
 			
 			/*Setup collision filter, ignoring the actor.*/
 			uint32_t collisionFilterInfo = 0;
@@ -474,9 +479,10 @@ namespace DtryUtils
 			/*Do*/
 			a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
 			if (pick_data.rayOutput.HasHit()) {
-				logger::info("rayhit!");
 				RE::NiPoint3 hitpos = rayStart + (a_rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
-				debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3);
+				if (settings::bEnableDebugDraw) {
+					debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3);
+				}
 
 				auto collidable = pick_data.rayOutput.rootCollidable;
 				if (collidable) {

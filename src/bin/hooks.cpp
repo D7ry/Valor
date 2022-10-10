@@ -27,8 +27,7 @@ namespace hooks
 		RE::Actor* actor = a_actionData->Subject_8->As<RE::Actor>();
 		
 		if (settings::bEnablePerilousAttack) {
-			logger::info("processing perilous attack!");
-			perilous::GetSingleton()->attempt_start_perilous_attack(actor);
+			//perilous::GetSingleton()->attempt_start_perilous_attack(actor);
 		}
 
 		return _perform_atk_action(a_actionData);
@@ -44,7 +43,8 @@ namespace hooks
 		case "preHitFrame"_h:
 			dodge::GetSingleton()->react_to_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 		case "attackStop"_h:
-			perilous::GetSingleton()->attempt_end_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
+			break;
+			//perilous::GetSingleton()->attempt_end_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 		}
 	}
 
@@ -62,7 +62,6 @@ namespace hooks
 
 	ptr_CombatPath on_combatBehavior_backoff_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		logger::info("backoff path");
 		dodge::GetSingleton()->attempt_dodge(a_actor, { dodge::dodge_direction::back });
 		
 		return _create_path(a_actor, a_newPos, a3, speed_ind);

@@ -5,7 +5,7 @@
 #define PI 3.1415926535f
 
 
-bool dodge::attempt_passive_dodge(RE::TESObjectREFR& a_ref)
+bool dodge::attempt_active_dodge(RE::TESObjectREFR& a_ref)
 {
 	if (a_ref.GetFormType() != RE::FormType::ActorCharacter) {
 		return true;
@@ -27,15 +27,21 @@ bool dodge::attempt_passive_dodge(RE::TESObjectREFR& a_ref)
 /*Trigger reactive AI surrounding the attacker.*/
 void dodge::react_to_attack(RE::Actor* a_attacker)
 {
+	if (!settings::bEnableDodgeAI_active) {
+		return;
+	}
 	if (!a_attacker->IsPlayerRef()) {
 		return; // dodge player for now.
 	}
-	RE::TES::GetSingleton()->ForEachReferenceInRange(a_attacker, 200, &attempt_passive_dodge);
+	RE::TES::GetSingleton()->ForEachReferenceInRange(a_attacker, 200, &attempt_active_dodge);
 }
 
-/*Attempt to dodge an incoming thread, choosing one of the directions from A_DIRECTIONS.*/
+/*Attempt to dodge an incoming threat, choosing one of the directions from A_DIRECTIONS.*/
 void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions)
 {
+	if (!settings::bEnableDodgeAI) {
+		return;
+	}
 
 	if (!able_dodge(a_actor)) {
 		return;
@@ -90,7 +96,9 @@ bool dodge::can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest)
 	
 	if (canNavigate) {
 		RE::NiPoint3 dest = gotoNavdest ? nav_dest : raycast_dest;
-		debug::getsingleton()->debugAPI->DrawLine(a_actor->GetPosition(), dest, 1.f, 0xff00ff);  //green line
+		if (settings::bEnableDebugDraw) {
+			debug::getsingleton()->debugAPI->DrawLine(a_actor->GetPosition(), dest, 1.f, 0xff00ff);  //green line
+		}
 		
 		/*Cast a ray from the centre of the actor to the destination. If the raycast gets nothing, nothing significant is on the way.*/
 		dest.z += a_actor->GetHeight() * 1 / 4;

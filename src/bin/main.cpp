@@ -20,10 +20,12 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kDataLoaded:
 		perilous::GetSingleton()->init();
 		hooks::on_animation_event::install();
-		hooks::on_combatBehavior_backoff_createPath::install();
-		hooks::on_combatBehavior_circle_createPath::install();
-		hooks::on_combatBehavior_dodgethreat_createPath::install();
-		hooks::on_combatBehavior_fallback_createPath::install();
+		if (settings::bEnableDodgeAI_passive) {  //install hooks for passive dodge
+			hooks::on_combatBehavior_backoff_createPath::install();
+			hooks::on_combatBehavior_circle_createPath::install();
+			hooks::on_combatBehavior_dodgethreat_createPath::install();
+			hooks::on_combatBehavior_fallback_createPath::install();
+		}
 		break;
 	case SKSE::MessagingInterface::kPostLoad:
 		initTrueHUDAPI();
@@ -35,6 +37,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 
 void onSKSEInit()
 {
+	settings::read();
 	hooks::alloc();
 	hooks::on_attack_action::install(); /*Install this hook prior to all other plugins(SCAR, VC) to ensure attack cancellation consistency.*/
 }
