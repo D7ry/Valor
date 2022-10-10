@@ -10,12 +10,8 @@ bool dodge::attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker)
 	if (a_dodger->IsPlayerRef() || a_dodger->IsDead() || !a_dodger->Is3DLoaded() || a_dodger->IsBleedingOut() || a_dodger->IsInKillMove()) {
 		return true;
 	}
-	
-	if (a_dodger->GetCombatGroup() == a_attacker->GetCombatGroup()) {
-		return true;
-	}
-	
-	if (a_dodger->IsPlayerTeammate() && (a_attacker->IsPlayerRef() || a_attacker->IsPlayerTeammate())) {
+
+	if (!ValhallaUtils::is_adversary(a_dodger, a_attacker)) {
 		return true;
 	}
 

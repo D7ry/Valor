@@ -220,7 +220,30 @@ namespace inlineUtils
 class ValhallaUtils
 {
 public:
+	static bool is_adversary(RE::Actor* actor1, RE::Actor* actor2) {
+		bool is_adversary = false;
 
+		auto combatGroup = actor1->GetCombatGroup();
+		if (combatGroup) {
+			for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
+				if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor2) {
+					is_adversary = true;
+				}
+			}
+		}
+
+		if (!is_adversary) {
+			combatGroup = actor2->GetCombatGroup();
+			if (combatGroup) {
+				for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
+					if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor1) {
+						is_adversary = true;
+					}
+				}
+			}
+		}
+		return is_adversary;
+	}
 	/*Whether the actor's back is facing the other actor's front.
 	@param actor1: actor whose facing will be returned
 	@param actor2: actor whose relative location to actor1 will be calculated.*/
