@@ -20,6 +20,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 	case SKSE::MessagingInterface::kDataLoaded:
 		perilous::GetSingleton()->init();
 		hooks::on_animation_event::install();
+		hooks::on_updateAnimation_internal::install();
 		if (settings::bEnableDodgeAI_passive) {  //install hooks for passive dodge
 			hooks::on_combatBehavior_backoff_createPath::install();
 			hooks::on_combatBehavior_circle_createPath::install();

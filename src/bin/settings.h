@@ -5,7 +5,11 @@ public:
 	static void read();
 	
 	/*List of settings*/
-	inline static bool bEnablePerilousAttack = false;
+	inline static bool bPerilous_enable = true;
+	static inline bool bPerilous_chargeTime_enable = true; /*Beginning of perilous attacks are performed slower to simulate a charging effect and giving the player time to react.*/ 
+	static inline float fPerilous_chargeTime_multiplier = 0.5 /*Multiplier for the charge time.*/;
+	static inline float fPerilous_chargeTime_duration = 0.5;
+
 	inline static bool bEnableDodgeAI = true; /*Global switch for dodge AI*/
 	inline static bool bEnableDodgeAI_passive = true; /*Passive dodge AI that's built on top of vanilla's combat movement AI.*/
 	inline static bool bEnableDodgeAI_active = true; /*Reactive dodge AI that dodges incoming attacks.*/

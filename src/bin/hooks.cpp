@@ -26,7 +26,7 @@ namespace hooks
 		}
 		RE::Actor* actor = a_actionData->Subject_8->As<RE::Actor>();
 		
-		if (settings::bEnablePerilousAttack) {
+		if (settings::bPerilous_enable) {
 			//perilous::GetSingleton()->attempt_start_perilous_attack(actor);
 		}
 
@@ -42,6 +42,7 @@ namespace hooks
 		switch (hash(eventTag.data(), eventTag.size())) {
 		case "preHitFrame"_h:
 			dodge::GetSingleton()->react_to_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
+			perilous::GetSingleton()->attempt_start_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 		case "attackStop"_h:
 			break;
 			//perilous::GetSingleton()->attempt_end_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
@@ -105,6 +106,15 @@ namespace hooks
 		
 
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
+
+	}
+
+void on_updateAnimation_internal::UpdateAnimationInternal(RE::Actor* a_this, float a_deltaTime)
+	{
+		if (settings::bPerilous_chargeTime_enable) {
+			a_deltaTime = perilous::GetSingleton()->getCharge(a_this->GetHandle(), a_deltaTime, true);
+		}
+		_UpdateAnimationInternal(a_this, a_deltaTime);
 
 	}
 

@@ -15,7 +15,11 @@ public:
 
 	void attempt_end_perilous_attack(RE::Actor* a_actor);
 
+	float getCharge(RE::ActorHandle a_actorHandle, float a_deltaTime, bool a_bUpdate);
+
 private:
+	void addCharge(RE::ActorHandle a_refHandle, float a_chargeLength);
+
 	bool should_perilous_attack(RE::Actor* a_actor);
 
 	void perform_perilous_attack(RE::Actor* a_actor);
@@ -24,10 +28,13 @@ private:
 
 	RE::TESEffectShader* temp;
 
-	RE::Explosion* perilousExplosion;
-	
-	RE::TESObjectACTI* perilousExplosionNode;
+	RE::BGSArtObject* perilousHitEffectArt;
+
 
 	RE::BGSSoundDescriptorForm* perilousSound;
+
+	std::unordered_map<RE::ActorHandle, float> activeCharges;
+
+	std::mutex activeChargesLock;
 	
 };
