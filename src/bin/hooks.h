@@ -109,21 +109,7 @@ namespace hooks
 		static inline REL::Relocation<decltype(create_path)> _create_path;
 	};
 	
-	class on_updateAnimation_internal
-	{
-	public:
-		static void install()
-		{
-			auto& trampoline = SKSE::GetTrampoline();
-			REL::Relocation<uintptr_t> hook{ RELOCATION_ID(40436, 41453) };                                                                // 6E1990, 70A840, RunOneActorAnimationUpdateJob
-			_UpdateAnimationInternal = trampoline.write_call<5>(hook.address() + RELOCATION_OFFSET(0x74, 0x74), UpdateAnimationInternal);  // 6E1A04, 70A8B4;
-			logger::info("hook:on_updateAnimation_internal");
-		}
 
-	private:
-		static void UpdateAnimationInternal(RE::Actor* a_this, float a_deltaTime);
-		static inline REL::Relocation<decltype(UpdateAnimationInternal)> _UpdateAnimationInternal;
-	};
 
 	inline void alloc() 
 	{

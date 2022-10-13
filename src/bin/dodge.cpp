@@ -63,7 +63,7 @@ void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_dir
 
 	for (auto it = a_directions.begin(); it != a_directions.end(); ++it) {
 		dodge_direction direction = *it;
-		RE::NiPoint3 dodge_dest = inlineUtils::get_abs_pos(a_actor, get_dodge_vector(*it));
+		RE::NiPoint3 dodge_dest = Utils::get_abs_pos(a_actor, get_dodge_vector(*it));
 		if (can_goto(a_actor, dodge_dest)) {
 			do_dodge(a_actor, direction);
 			return;

@@ -109,13 +109,4 @@ namespace hooks
 
 	}
 
-void on_updateAnimation_internal::UpdateAnimationInternal(RE::Actor* a_this, float a_deltaTime)
-	{
-		if (settings::bPerilous_chargeTime_enable) {
-			a_deltaTime = perilous::GetSingleton()->getCharge(a_this->GetHandle(), a_deltaTime, true);
-		}
-		_UpdateAnimationInternal(a_this, a_deltaTime);
-
-	}
-
 };
