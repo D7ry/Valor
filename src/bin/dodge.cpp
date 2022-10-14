@@ -4,46 +4,34 @@
 #include <algorithm>
 #define PI 3.1415926535f
 
-
-bool dodge::attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker)
-{
-	if (a_dodger->IsPlayerRef() || a_dodger->IsDead() || !a_dodger->Is3DLoaded() || a_dodger->IsBleedingOut() || a_dodger->IsInKillMove()) {
-		return true;
-	}
-
-	if (!ValhallaUtils::is_adversary(a_dodger, a_attacker)) {
-		return true;
-	}
-
-	switch (settings::iDodgeFramework) {
-	case 0:
-		dodge::GetSingleton()->attempt_dodge(a_dodger, dodge_directions_tk_all);
-		break;
-	case 1:
-		dodge::GetSingleton()->attempt_dodge(a_dodger, dodge_directions_dmco_all);
-		break;
-	}
-
-	return true;
-}
-
-
 /*Trigger reactive AI surrounding the attacker.*/
 void dodge::react_to_attack(RE::Actor* a_attacker)
 {
-	if (!settings::bEnableDodgeAI_active) {
+	if (!settings::bDodgeAI_reactive_enable) {
 		return;
 	}
-	//if (!a_attacker->IsPlayerRef()) {
-	//	return; // dodge player for now.
-	//}
-
+	
 	RE::TES::GetSingleton()->ForEachReference([&a_attacker](RE::TESObjectREFR& _refr) {
-		if (!_refr.IsDisabled() && _refr.GetFormType() == RE::FormType::ActorCharacter && _refr.GetPosition().GetDistance(a_attacker->GetPosition()) < 350.f) {
+		if (!_refr.IsDisabled() && _refr.GetFormType() == RE::FormType::ActorCharacter && _refr.GetPosition().GetDistance(a_attacker->GetPosition()) < settings::iDodgeAI_reactive_reactDist) {
 			RE::Actor* refr = _refr.As<RE::Actor>();
-			attempt_active_dodge(refr, a_attacker);
+			if (!refr || refr->IsPlayerRef() || refr->IsDead() || !refr->Is3DLoaded() || refr->IsBleedingOut() || refr->IsInKillMove() || !ValhallaUtils::is_adversary(refr, a_attacker)) {
+				return true;
+			}
+			if (!Utils::Actor::isHumanoid(refr)) {
+				return true;
+			}
+			if (ValhallaUtils::isBackFacing(a_attacker, refr)) { //no need to react to an attack if the attacker isn't facing you.
+				return true;
+			}
+			switch (settings::iDodgeFramework) {
+			case 0:
+				dodge::GetSingleton()->attempt_dodge(refr, {dodge_direction::kBackward, dodge_direction::kLeft, dodge_direction::kRight, dodge_direction::kForward });
+				break;
+			case 1:
+				dodge::GetSingleton()->attempt_dodge(refr, dodge_directions_dmco_all);
+				break;
+			}
 		}
-			
 		return true;
 	});
 }
@@ -51,7 +39,7 @@ void dodge::react_to_attack(RE::Actor* a_attacker)
 /*Attempt to dodge an incoming threat, choosing one of the directions from A_DIRECTIONS.*/
 void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions)
 {
-	if (!settings::bEnableDodgeAI) {
+	if (!settings::bDodgeAI_enable) {
 		return;
 	}
 
@@ -77,6 +65,9 @@ void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_dir
 /*Check if the actor is able to dodge.*/
 bool dodge::able_dodge(RE::Actor* a_actor)
 {
+	if (a_actor->GetAttackState() != RE::ATTACK_STATE_ENUM::kNone) {
+		return false;
+	}
 	return true;
 }
 
@@ -115,11 +106,11 @@ bool dodge::can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest)
 		/*Cast 4 rays from the actor, parallel to the dodging path to check for any obstacles.*/
 		float obstacleDist = 0; /*Distance to the obstacle, if any*/
 		dest.z += a_actor->GetHeight() * 1 / 4;
-		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.25f, &obstacleDist) == nullptr || obstacleDist >= settings::iPermissibleDodgeDistance;
+		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.25f, &obstacleDist) == nullptr || obstacleDist >= settings::iDodgeAI_permissibleDist;
 		dest.z += a_actor->GetHeight() * 1 / 4;
-		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.5f, &obstacleDist) == nullptr || obstacleDist >= settings::iPermissibleDodgeDistance;
+		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.5f, &obstacleDist) == nullptr || obstacleDist >= settings::iDodgeAI_permissibleDist;
 		dest.z += a_actor->GetHeight() * 1 / 4;
-		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.75f, &obstacleDist) == nullptr || obstacleDist >= settings::iPermissibleDodgeDistance;
+		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.75f, &obstacleDist) == nullptr || obstacleDist >= settings::iDodgeAI_permissibleDist;
 	}
 	
 
@@ -185,21 +176,21 @@ RE::NiPoint3 dodge::get_dodge_vector(dodge_direction a_direction)
 	switch (a_direction) {
 	case kForward:
 		ret.x = 0;
-		ret.y = settings::iDodgeDistance;
+		ret.y = settings::iDodgeAI_Distance;
 		ret.z = 0;
 		break;
 	case kBackward:
 		ret.x = 0;
-		ret.y = -settings::iDodgeDistance;
+		ret.y = -settings::iDodgeAI_Distance;
 		ret.z = 0;
 		break;
 	case kLeft:
-		ret.x = -settings::iDodgeDistance;
+		ret.x = -settings::iDodgeAI_Distance;
 		ret.y = 0;
 		ret.z = 0;
 		break;
 	case kRight:
-		ret.x = settings::iDodgeDistance;
+		ret.x = settings::iDodgeAI_Distance;
 		ret.y = 0;
 		ret.z = 0;
 		break;

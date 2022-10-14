@@ -40,7 +40,9 @@ namespace Utils
 		bool isDualWielding(RE::Actor* a_actor);
 		bool isEquippedShield(RE::Actor* a_actor);
 		bool isPowerAttacking(RE::Actor* a_actor);
+		bool isHumanoid(RE::Actor* a_actor);
 		void getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos);
+		void dropShield(RE::Actor* a_actor);
 	}
 	
 };

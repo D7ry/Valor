@@ -19,8 +19,6 @@ public:
 		kLeftForward = 8
 	};
 	
-
-	
 	dodge()
 	{
 		std::mt19937(rd);  // seed PRNG
@@ -32,7 +30,7 @@ public:
 		return &singleton;
 	}
 	
-	static bool attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker);
+	static void attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker);
 	
 	void attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions);
 

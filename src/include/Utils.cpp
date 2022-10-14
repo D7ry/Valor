@@ -277,6 +277,12 @@ bool Utils::Actor::isPowerAttacking(RE::Actor* a_actor)
 	return false;
 }
 
+bool Utils::Actor::isHumanoid(RE::Actor* a_actor)
+{
+	auto bodyPartData = a_actor->GetRace() ? a_actor->GetRace()->bodyPartData : nullptr;
+	return bodyPartData && bodyPartData->GetFormID() == 0x1d;
+}
+
 void Utils::Actor::getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos)
 {
 	if (!a_actor->race) {
@@ -292,6 +298,25 @@ void Utils::Actor::getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos)
 	}
 
 	pos = targetPoint->world.translate;
+}
+
+void Utils::Actor::dropShield(RE::Actor* a_actor)
+{
+	auto shd = RE::Offset::getEquippedShield(a_actor);
+	if (shd) {
+		auto shield = shd->As<RE::TESObjectARMO>();
+		if (shield) {
+			auto invShield = a_actor->GetInventory([](RE::TESBoundObject& a_obj) { return a_obj.IsArmor(); });
+			for (auto& pair : invShield) {
+				auto boundObj = pair.first;
+				if (boundObj && boundObj->GetFormID() == shield->GetFormID()) {
+					logger::info("dropping {}", boundObj->GetName());
+					const auto pos = a_actor->GetNodeByName("SHIELD")->world.translate;
+					a_actor->DropObject(boundObj, nullptr, 1, &pos, 0);
+				}
+			}
+		}
+	}
 }
 
 bool ValhallaUtils::is_adversary(RE::Actor* actor1, RE::Actor* actor2)
