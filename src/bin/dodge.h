@@ -5,7 +5,6 @@ class dodge
 {
 private:
 	std::random_device rd;
-
 public:
 	enum dodge_direction
 	{
@@ -19,10 +18,6 @@ public:
 		kLeftForward = 8
 	};
 	
-	dodge()
-	{
-		std::mt19937(rd);  // seed PRNG
-	}
 	
 	static dodge* GetSingleton()
 	{
@@ -32,7 +27,7 @@ public:
 	
 	static void attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker);
 	
-	void attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions);
+	void attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions, bool a_forceDodge = false);
 
 	void react_to_attack(RE::Actor* a_attacker);
 	

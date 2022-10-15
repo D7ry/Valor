@@ -21,10 +21,17 @@ namespace hooks
 		if (!a_actionData) {
 			return false;
 		}
-		if (!a_actionData->Subject_8) {
+
+		auto ref = a_actionData->source.get();
+		if (!ref) {
 			return false;
 		}
-		RE::Actor* actor = a_actionData->Subject_8->As<RE::Actor>();
+
+		RE::Actor* actor = ref->As<RE::Actor>();
+
+		if (!actor) {
+			return false;
+		}
 		
 		if (settings::bPerilous_enable) {
 			//perilous::GetSingleton()->attempt_start_perilous_attack(actor);
@@ -101,13 +108,30 @@ namespace hooks
 	{
 		switch (settings::iDodgeFramework) {
 		case 0:
-			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_all);
+			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_all, true);
 			break;
 		}
 		
 
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
 
+	}
+
+	void on_melee_hit::processHit(RE::Actor* victim, RE::HitData& hitData)
+	{
+		RE::Actor* attacker = hitData.aggressor.get().get();
+		if (attacker) {
+			RE::ActorHandle handle;
+			if (perilous::GetSingleton()->is_perilous_attacking(attacker, handle)) {
+				auto headingAngle = victim->GetHeadingAngle(attacker->GetPosition(), false);
+				auto direction = (headingAngle >= 0.0f) ? headingAngle / 360.0f : (360.0f + headingAngle) / 360.0f;
+				victim->SetGraphVariableFloat("staggerDirection", direction);
+				victim->SetGraphVariableFloat("StaggerMagnitude", 0.7);
+				victim->NotifyAnimationGraph("staggerStart");
+			}
+		}
+
+		_ProcessHit(victim, hitData);
 	}
 
 };

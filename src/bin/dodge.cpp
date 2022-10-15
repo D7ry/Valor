@@ -4,24 +4,34 @@
 #include <algorithm>
 #define PI 3.1415926535f
 
+/*Get the dodge chance of a reactive dodger in case of an incoming attack.*/
+float get_dodge_chance(RE::Actor* a_dodger) {
+	if (a_dodger->GetActorRuntimeData().combatController) {
+		RE::TESCombatStyle* style = a_dodger->GetActorRuntimeData().combatController->combatStyle;
+		if (style) {
+			return style->generalData.avoidThreatChance;
+		}
+	}
+	return 0.f;
+}
 /*Trigger reactive AI surrounding the attacker.*/
 void dodge::react_to_attack(RE::Actor* a_attacker)
 {
 	if (!settings::bDodgeAI_reactive_enable) {
 		return;
 	}
-	
-	RE::TES::GetSingleton()->ForEachReference([&a_attacker](RE::TESObjectREFR& _refr) {
+
+	RE::TES::GetSingleton()->ForEachReference([&](RE::TESObjectREFR& _refr) {
 		if (!_refr.IsDisabled() && _refr.GetFormType() == RE::FormType::ActorCharacter && _refr.GetPosition().GetDistance(a_attacker->GetPosition()) < settings::iDodgeAI_reactive_reactDist) {
 			RE::Actor* refr = _refr.As<RE::Actor>();
-			if (!refr || refr->IsPlayerRef() || refr->IsDead() || !refr->Is3DLoaded() || refr->IsBleedingOut() || refr->IsInKillMove() || !ValhallaUtils::is_adversary(refr, a_attacker)) {
-				return true;
+			if (!refr || refr->IsPlayerRef() || refr->IsDead() || !refr->Is3DLoaded() || refr->IsInKillMove() || !ValhallaUtils::is_adversary(refr, a_attacker)) {
+				return RE::BSContainer::ForEachResult::kContinue;
 			}
 			if (!Utils::Actor::isHumanoid(refr)) {
-				return true;
+				return RE::BSContainer::ForEachResult::kContinue;
 			}
 			if (ValhallaUtils::isBackFacing(a_attacker, refr)) { //no need to react to an attack if the attacker isn't facing you.
-				return true;
+				return RE::BSContainer::ForEachResult::kContinue;
 			}
 			switch (settings::iDodgeFramework) {
 			case 0:
@@ -32,14 +42,24 @@ void dodge::react_to_attack(RE::Actor* a_attacker)
 				break;
 			}
 		}
-		return true;
+		return RE::BSContainer::ForEachResult::kContinue;
 	});
 }
 
 /*Attempt to dodge an incoming threat, choosing one of the directions from A_DIRECTIONS.*/
-void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions)
+void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions, bool a_forceDodge)
 {
+	
 	if (!settings::bDodgeAI_enable) {
+		return;
+	}
+	
+	float dodge_chance = a_forceDodge ? 1.f : get_dodge_chance(a_actor);
+	
+	std::mt19937 gen(rd());
+	/*Check dodge chance using PRNG*/
+	std::uniform_real_distribution<> dis(0.f, 1.f);
+	if (dis(gen) > dodge_chance) {
 		return;
 	}
 
@@ -47,6 +67,7 @@ void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_dir
 		return;
 	}
 
+	/*Shuffle directions*/
 	std::shuffle(a_directions.begin(), a_directions.end(), rd);  //shuffle directions
 
 	for (auto it = a_directions.begin(); it != a_directions.end(); ++it) {
@@ -65,9 +86,10 @@ void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_dir
 /*Check if the actor is able to dodge.*/
 bool dodge::able_dodge(RE::Actor* a_actor)
 {
-	if (a_actor->GetAttackState() != RE::ATTACK_STATE_ENUM::kNone) {
+	if (a_actor->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kNone) {
 		return false;
 	}
+		
 	return true;
 }
 

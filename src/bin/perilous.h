@@ -17,12 +17,15 @@ public:
 
 	void attempt_end_perilous_attack(RE::Actor* a_actor);
 
+	bool is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_target);
+
 private:
+	std::random_device rd;
 
 	void perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target);
 
-	bool is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_target);
-
+	inline void flag_perilous(RE::Actor* a_actor);
+	inline void unflag_perilous(RE::Actor* a_actor);
 	RE::SpellItem* perilousSpell;
 	RE::BGSSoundDescriptorForm* perilousSound;
 	RE::TESEffectShader* temp;

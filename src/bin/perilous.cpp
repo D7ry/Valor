@@ -5,30 +5,48 @@ using readLock = std::shared_lock<std::shared_mutex>;
 
 void perilous::init()
 {
-	DtryUtils::formLoader loader = DtryUtils::formLoader("Anchor spell for MCO.esp");
-	loader.load(perilousSpell, 0x8c7);
-	loader.load(temp, 0x80a);
-	//loader.load(perilousSound, )
-	loader.log();
 	DtryUtils::formLoader loader2("ValhallaCombat.esp");
 	loader2.log();
 	DtryUtils::formLoader loader3("Valgrind.esp");
 	loader3.load(perilousHitEffectArt, 0xd69);
 	loader3.load(perilousSound, 0xd6a);
+	loader3.load(perilousSpell, 0xD6B);
 	loader3.log();
+}
+
+float get_perilous_chance(RE::Actor* a_actor) {
+	if (a_actor->GetActorRuntimeData().combatController) {
+		RE::TESCombatStyle* style = a_actor->GetActorRuntimeData().combatController->combatStyle;
+		if (style) {
+			return style->generalData.offensiveMult;
+		}
+	}
+	return 0.f;
 }
 
 void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 {
-	auto target = a_actor->currentCombatTarget;
-	if (!target) {
+	if (a_actor->IsPlayerRef()) {
 		return;
 	}
 	
-	RE::ActorHandle tempRet;
-	if (is_perilous_attacking(a_actor, tempRet)) {
-		attempt_end_perilous_attack(a_actor);
+	auto target = a_actor->GetActorRuntimeData().currentCombatTarget;
+	if (!target) {
+		return;
 	}
+
+	float chance = get_perilous_chance(a_actor);
+	if (chance <= 0.f) {
+		return;
+	}
+	
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> dis(0.f, 1.f);
+	if (dis(gen) > chance) {
+		return;
+	}
+	
+	attempt_end_perilous_attack(a_actor);  //End the previous perilous attack if any.
 	
 	{
 		readLock lock(perilous_counter_lock);
@@ -40,32 +58,39 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 		}
 	}
 
+	//if (Utils::Actor::isPowerAttacking(a_actor)) { /*Power Perilous*/
+		perform_perilous_attack(a_actor, target); 
+	//} else {/*Light perilous*/
 
-	if (a_actor->IsPlayerRef()) {
-		return;
-	}
-	
-	if (Utils::Actor::isPowerAttacking(a_actor)) { /*Light perilous*/
+	//}
 
-	} else {/*Power Perilous*/
-
-		
-	}
-	
-	perform_perilous_attack(a_actor, target);
 }
+
+/*Flag the actor as perilous attacker for other mods&plugins.*/
+void perilous::flag_perilous(RE::Actor* a_actor)
+{
+	if (!a_actor->HasSpell(perilousSpell)) {
+		a_actor->AddSpell(perilousSpell);
+	}
+}
+void perilous::unflag_perilous(RE::Actor* a_actor)
+{
+	if (a_actor->HasSpell(perilousSpell)) {
+		a_actor->RemoveSpell(perilousSpell);
+	}
+}
+
 
 void perilous::attempt_end_perilous_attack(RE::Actor* a_actor) 
 {
 	if (a_actor->IsPlayerRef()) {
 		return;
 	}
-
 	RE::ActorHandle target;
 	if (!is_perilous_attacking(a_actor, target)) {
 		return;
 	}
-
+	unflag_perilous(a_actor);
 	/*Remove the actor from the perilous_attacks map*/
 	{
 		writeLock lock(perilous_attacks_lock);
@@ -81,10 +106,6 @@ void perilous::attempt_end_perilous_attack(RE::Actor* a_actor)
 				perilous_counter.erase(it);
 			}
 		}
-	}
-	
-	if (a_actor->HasSpell(perilousSpell)) {
-		a_actor->RemoveSpell(perilousSpell);
 	}
 	
 }
@@ -107,6 +128,8 @@ void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_tar
 		perilous_attacks.emplace(a_actor->GetHandle(), a_target);
 	}
 
+	flag_perilous(a_actor);
+
 	/*VFX*/
 	RE::NiAVObject* fxNode = nullptr;
 	if (Utils::Actor::isHumanoid(a_actor)) {
@@ -117,8 +140,7 @@ void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_tar
 	a_actor->InstantiateHitArt(perilousHitEffectArt, 1, a_actor, false, false, fxNode);
 	/*SFX*/
 	Utils::playSound(a_actor, perilousSound, 1.f);  //TODO: increase the sound mult if the target is player.
-
-	/*Book keeping*/
+	
 	
 	if (settings::bPerilous_chargeTime_enable) {
 		AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_chargeTime_multiplier, settings::fPerilous_chargeTime_duration);
@@ -136,3 +158,4 @@ bool perilous::is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_targ
 	}
 	return false;
 }
+

@@ -56,10 +56,10 @@ RE::NiPoint3 Utils::get_abs_pos(RE::Actor* a_actor, RE::NiPoint3 a_relative_pos)
 	@param magnitude: strength of a push.*/
 void Utils::PushActorAway(RE::Actor* causer, RE::Actor* target, float magnitude)
 {
-	auto targetPoint = causer->GetNodeByName(causer->race->bodyPartData->parts[0]->targetName.c_str());
+	auto targetPoint = causer->GetNodeByName(causer->GetActorRuntimeData().race->bodyPartData->parts[0]->targetName.c_str());
 	RE::NiPoint3 vec = targetPoint->world.translate;
 	//RE::NiPoint3 vec = causer->GetPosition();
-	RE::Offset::pushActorAway(causer->currentProcess, target, vec, magnitude);
+	RE::Offset::pushActorAway(causer->GetActorRuntimeData().currentProcess, target, vec, magnitude);
 }
 
 void Utils::SetRotationMatrix(RE::NiMatrix3& a_matrix, float sacb, float cacb, float sb)
@@ -263,7 +263,7 @@ bool Utils::Actor::isEquippedShield(RE::Actor* a_actor)
 
 bool Utils::Actor::isPowerAttacking(RE::Actor* a_actor)
 {
-	auto currentProcess = a_actor->currentProcess;
+	auto currentProcess = a_actor->GetActorRuntimeData().currentProcess;
 	if (currentProcess) {
 		auto highProcess = currentProcess->high;
 		if (highProcess) {
@@ -285,10 +285,10 @@ bool Utils::Actor::isHumanoid(RE::Actor* a_actor)
 
 void Utils::Actor::getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos)
 {
-	if (!a_actor->race) {
+	if (!a_actor->GetActorRuntimeData().race) {
 		return;
 	}
-	RE::BGSBodyPart* bodyPart = a_actor->race->bodyPartData->parts[0];
+	RE::BGSBodyPart* bodyPart = a_actor->GetActorRuntimeData().race->bodyPartData->parts[0];
 	if (!bodyPart) {
 		return;
 	}
@@ -323,25 +323,31 @@ bool ValhallaUtils::is_adversary(RE::Actor* actor1, RE::Actor* actor2)
 {
 	bool is_adversary = false;
 
-	auto combatGroup = actor1->GetCombatGroup();
-	if (combatGroup) {
-		for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
-			if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor2) {
-				is_adversary = true;
-			}
-		}
+	if (actor1->GetActorRuntimeData().currentCombatTarget == actor2->GetHandle() || actor2->GetActorRuntimeData().currentCombatTarget == actor1->GetHandle()) {
+		is_adversary = true;
 	}
 
-	if (!is_adversary) {
-		combatGroup = actor2->GetCombatGroup();
-		if (combatGroup) {
-			for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
-				if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor1) {
-					is_adversary = true;
-				}
-			}
-		}
-	}
+	//if (!is_adversary) {
+	//	auto combatGroup = actor1->GetCombatGroup();
+	//	if (combatGroup) {
+	//		for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
+	//			if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor2) {
+	//				is_adversary = true;
+	//			}
+	//		}
+	//	}
+	//}
+
+	//if (!is_adversary) {
+	//	auto combatGroup = actor2->GetCombatGroup();
+	//	if (combatGroup) {
+	//		for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
+	//			if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor1) {
+	//				is_adversary = true;
+	//			}
+	//		}
+	//	}
+	//}
 	return is_adversary;
 }
 

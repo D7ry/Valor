@@ -196,6 +196,7 @@ namespace DtryUtils
 class AnimSpeedManager
 {
 	class on_updateAnimation_internal;
+	class on_updateAnimation_player;
 
 public:
 	static void setAnimSpeed(RE::ActorHandle a_actorHandle, float a_speedMult, float a_dur);
@@ -204,6 +205,7 @@ public:
 	
 	static void init() {
 		on_updateAnimation_internal::install();
+		on_updateAnimation_player::install();
 	}
 
 private:
@@ -216,6 +218,26 @@ private:
 	static inline std::mutex _animSpeedsLock = std::mutex();
 
 	static void update(RE::ActorHandle a_actorHandle, float& a_deltaTime);
+	
+	class on_updateAnimation_player
+	{
+	public:
+		static void install()
+		{
+			auto& trampoline = SKSE::GetTrampoline();
+			REL::Relocation<std::uintptr_t> PlayerCharacterVtbl{ RE::VTABLE_PlayerCharacter[0] };
+			_PlayerCharacter_UpdateAnimation = PlayerCharacterVtbl.write_vfunc(0x7D, PlayerCharacter_UpdateAnimation);
+			logger::info("hook:on_updateAnimation_player");
+		}
+
+	private:
+		static void PlayerCharacter_UpdateAnimation(RE::PlayerCharacter* a_this, float a_deltaTime)
+		{
+			AnimSpeedManager::update(a_this->GetHandle(), a_deltaTime);
+			_PlayerCharacter_UpdateAnimation(a_this, a_deltaTime);
+		}
+		static inline REL::Relocation<decltype(PlayerCharacter_UpdateAnimation)> _PlayerCharacter_UpdateAnimation;
+	};
 
 	class on_updateAnimation_internal
 	{

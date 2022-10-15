@@ -109,6 +109,22 @@ namespace hooks
 		static inline REL::Relocation<decltype(create_path)> _create_path;
 	};
 	
+	
+	class on_melee_hit
+	{
+	public:
+		static void install()
+		{
+			REL::Relocation<uintptr_t> hook{ RELOCATION_ID(37673, 38627) };  //140628C20       14064E760
+			auto& trampoline = SKSE::GetTrampoline();
+			_ProcessHit = trampoline.write_call<5>(hook.address() + RELOCATION_OFFSET(0x3C0, 0x4A8), processHit);
+			logger::info("hook:on_melee_hit");
+		}
+
+	private:
+		static void processHit(RE::Actor* victim, RE::HitData& hitData);
+		static inline REL::Relocation<decltype(processHit)> _ProcessHit;  //140626400       14064BAB0
+	};
 
 
 	inline void alloc() 
