@@ -20,6 +20,13 @@ public:
 	static inline int iDodgeAI_permissibleDist = 200;        /*Acceptable distance of a single dodge. 
 													  * Sometimes the dodger can get obstructed by a wall before completing the whole dodge while already making a big displacement.
 													  * AI would take dodges that can make this displacement as a permissible(tho suboptimal) dodge and still make the dodge.*/
+
+	static inline bool bNPCCommitment_enable = true; /*Enable NPC attack commitment.*/
+	static inline float fNPCCommitment_AttackStartMult = 0.5f;
+	static inline float fNPCCommitment_AttackMidMult = 0.1f;
+	static inline float fNPCCommitment_AttackEndMult = 0.f;
+
+
 	inline static bool bEnableTimedBlock = true;
 
 	static inline bool bEnableDebugDraw = false;

@@ -21,6 +21,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 		perilous::GetSingleton()->init();
 		hooks::on_animation_event::install();
 		hooks::on_melee_hit::install();
+		hooks::on_set_rotation::install();
 		if (settings::bDodgeAI_passive_enable) {  //install hooks for passive dodge
 			hooks::on_combatBehavior_backoff_createPath::install();
 			hooks::on_combatBehavior_circle_createPath::install();
@@ -130,7 +131,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
     #ifndef NDEBUG
 	while (!IsDebuggerPresent()) { Sleep(100); }
 #endif
-
+	REL::Module::reset();
 	InitializeLog();
 	logger::info("{} v{}"sv, Plugin::NAME, Plugin::VERSION.string());
 

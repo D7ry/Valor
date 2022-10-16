@@ -44,6 +44,13 @@ namespace Utils
 		void getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos);
 		void dropShield(RE::Actor* a_actor);
 	}
+
+	namespace math
+	{
+#define PI 3.14159265358979323846f
+#define TWO_PI 6.28318530717958647692f
+		float NormalRelativeAngle(float a_angle);
+	}
 	
 };
 

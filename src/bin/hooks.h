@@ -127,9 +127,30 @@ namespace hooks
 	};
 
 
+	class on_set_rotation
+	{
+	public:
+		static void install()
+		{
+			auto& trampoline = SKSE::GetTrampoline();
+			REL::Relocation<uintptr_t> hook1{ RELOCATION_ID(32042, 32796) };  // 4EC300, 504B30  // synchronized anims
+			REL::Relocation<uintptr_t> hook2{ RELOCATION_ID(36365, 37356) };  // 5D87F0, 5FD7E0
+
+			_Actor_SetRotationX = trampoline.write_call<5>(hook1.address() + RELOCATION_OFFSET(0x4DC, 0x667), Actor_SetRotationX);  // 4EC7DC
+			_Actor_SetRotationZ = trampoline.write_call<5>(hook2.address() + RELOCATION_OFFSET(0x9C7, 0xA87), Actor_SetRotationZ);  // 5D91B7
+		}
+
+	private:
+		static void Actor_SetRotationX(RE::Actor* a_this, float a_angle);
+		static void Actor_SetRotationZ(RE::Actor* a_this, float a_angle);
+		static inline REL::Relocation<decltype(Actor_SetRotationX)> _Actor_SetRotationX;
+		static inline REL::Relocation<decltype(Actor_SetRotationZ)> _Actor_SetRotationZ;
+	};
+
+
 	inline void alloc() 
 	{
-		SKSE::AllocTrampoline(1 << 7);
+		SKSE::AllocTrampoline(1 << 8);
 	}
 
 };

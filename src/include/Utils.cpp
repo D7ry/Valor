@@ -360,3 +360,12 @@ bool ValhallaUtils::isBackFacing(RE::Actor* actor1, RE::Actor* actor2)
 		return false;
 	}
 }
+
+float Utils::math::NormalRelativeAngle(float a_angle)
+{
+	while (a_angle > PI)
+		a_angle -= TWO_PI;
+	while (a_angle < -PI)
+		a_angle += TWO_PI;
+	return a_angle;
+}

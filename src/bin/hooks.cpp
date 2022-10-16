@@ -19,20 +19,17 @@ namespace hooks
 	bool on_attack_action::perform_atk_action(RE::TESActionData* a_actionData)
 	{
 		if (!a_actionData) {
-			return false;
+			return _perform_atk_action(a_actionData);
 		}
-
 		auto ref = a_actionData->source.get();
 		if (!ref) {
-			return false;
+			return _perform_atk_action(a_actionData);
 		}
 
 		RE::Actor* actor = ref->As<RE::Actor>();
-
 		if (!actor) {
-			return false;
+			return _perform_atk_action(a_actionData);
 		}
-		
 		if (settings::bPerilous_enable) {
 			//perilous::GetSingleton()->attempt_start_perilous_attack(actor);
 		}
@@ -132,6 +129,43 @@ namespace hooks
 		}
 
 		_ProcessHit(victim, hitData);
+	}
+
+
+	inline void offsetRotation(RE::Actor* a_actor, float& a_angle) 
+	{
+		float angleDelta = Utils::math::NormalRelativeAngle(a_angle - a_actor->data.angle.z);
+		switch (a_actor->AsActorState()->GetAttackState()) {
+		case RE::ATTACK_STATE_ENUM::kDraw:
+			angleDelta *= settings::fNPCCommitment_AttackStartMult;
+			break;
+		case RE::ATTACK_STATE_ENUM::kSwing:
+		case RE::ATTACK_STATE_ENUM::kHit:
+			angleDelta *= settings::fNPCCommitment_AttackMidMult;
+			break;
+		case RE::ATTACK_STATE_ENUM::kNextAttack:
+		case RE::ATTACK_STATE_ENUM::kFollowThrough:
+			angleDelta *= settings::fNPCCommitment_AttackEndMult;
+			break;
+		}
+		a_angle = a_actor->data.angle.z + angleDelta;
+	}
+
+	
+	void on_set_rotation::Actor_SetRotationX(RE::Actor* a_this, float a_angle)
+	{
+		if (!a_this->IsPlayerRef()) {
+			offsetRotation(a_this, a_angle);
+		}
+		_Actor_SetRotationX(a_this, a_angle);
+	}
+
+	void on_set_rotation::Actor_SetRotationZ(RE::Actor* a_this, float a_angle)
+	{
+		if (!a_this->IsPlayerRef()) {
+			offsetRotation(a_this, a_angle);
+		}
+		_Actor_SetRotationZ(a_this, a_angle);
 	}
 
 };
