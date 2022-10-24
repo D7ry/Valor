@@ -9,7 +9,7 @@ float get_dodge_chance(RE::Actor* a_dodger) {
 	if (a_dodger->GetActorRuntimeData().combatController) {
 		RE::TESCombatStyle* style = a_dodger->GetActorRuntimeData().combatController->combatStyle;
 		if (style) {
-			return style->generalData.avoidThreatChance;
+			return style->generalData.avoidThreatChance * settings::fDodgeAI_chanceMult;
 		}
 	}
 	return 0.f;

@@ -2,7 +2,7 @@
 #include "settings.h"
 #include "perilous.h"
 #include "dodge.h"
-
+#include "AttackState.h"
 #include "include/Utils.h"
 namespace hooks
 {
@@ -47,9 +47,52 @@ namespace hooks
 		case "preHitFrame"_h:
 			dodge::GetSingleton()->react_to_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 			perilous::GetSingleton()->attempt_start_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
+			if (AttackState::GetSingleton()->get_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle()) != AttackState::AttackState::kMid) {
+				AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kStart);
+			}
 			break;
 		case "attackStop"_h:
 			perilous::GetSingleton()->attempt_end_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
+			AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kNone);
+			break;
+		// Start phase
+		case "CastOKStart"_h:
+		case "TDM_AttackStart"_h:
+		case "Collision_AttackStart"_h:
+		case "Collision_Start"_h:
+			if (AttackState::GetSingleton()->get_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle()) != AttackState::AttackState::kMid) {
+				AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kStart);
+			}
+			break;
+		// Mid phase
+		case "weaponSwing"_h:
+		case "weaponLeftSwing"_h:
+		case "SoundPlay.WPNSwingUnarmed"_h:
+		case "TDM_AttackMid"_h:
+		case "Collision_Add"_h:
+			if (AttackState::GetSingleton()->get_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle()) != AttackState::AttackState::kEnd) {
+				AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kMid);
+			}
+			break;
+		// End phase
+		case "HitFrame"_h:
+		case "attackWinStart"_h:
+		case "SkySA_AttackWinStart"_h:
+		case "MCO_WinOpen"_h:
+		case "MCO_PowerWinOpen"_h:
+		case "MCO_TransitionOpen"_h:
+		case "MCO_Recovery"_h:
+		case "TDM_AttackEnd"_h:
+		case "Collision_AttackEnd"_h:
+			AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kEnd);
+			break;
+		// None phase
+		case "TDM_AttackStop"_h:
+		case "SkySA_AttackWinEnd"_h:
+		case "MCO_WinClose"_h:
+		case "MCO_PowerWinClose"_h:
+		case "MCO_TransitionClose"_h:
+			AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kNone);
 			break;
 		}
 	}
@@ -135,16 +178,14 @@ namespace hooks
 	inline void offsetRotation(RE::Actor* a_actor, float& a_angle) 
 	{
 		float angleDelta = Utils::math::NormalRelativeAngle(a_angle - a_actor->data.angle.z);
-		switch (a_actor->AsActorState()->GetAttackState()) {
-		case RE::ATTACK_STATE_ENUM::kDraw:
+		switch (AttackState::GetSingleton()->get_atk_state(a_actor->GetHandle())) {
+		case AttackState::atk_state::kStart:
 			angleDelta *= settings::fNPCCommitment_AttackStartMult;
 			break;
-		case RE::ATTACK_STATE_ENUM::kSwing:
-		case RE::ATTACK_STATE_ENUM::kHit:
+		case AttackState::atk_state::kMid:
 			angleDelta *= settings::fNPCCommitment_AttackMidMult;
 			break;
-		case RE::ATTACK_STATE_ENUM::kNextAttack:
-		case RE::ATTACK_STATE_ENUM::kFollowThrough:
+		case AttackState::atk_state::kEnd:
 			angleDelta *= settings::fNPCCommitment_AttackEndMult;
 			break;
 		}
@@ -155,7 +196,9 @@ namespace hooks
 	void on_set_rotation::Actor_SetRotationX(RE::Actor* a_this, float a_angle)
 	{
 		if (!a_this->IsPlayerRef()) {
-			offsetRotation(a_this, a_angle);
+			if (settings::bNPCCommitment_enable && a_this->IsAttacking()) {
+				offsetRotation(a_this, a_angle);
+			}
 		}
 		_Actor_SetRotationX(a_this, a_angle);
 	}
@@ -163,7 +206,9 @@ namespace hooks
 	void on_set_rotation::Actor_SetRotationZ(RE::Actor* a_this, float a_angle)
 	{
 		if (!a_this->IsPlayerRef()) {
-			offsetRotation(a_this, a_angle);
+			if (settings::bNPCCommitment_enable && a_this->IsAttacking()) {
+				offsetRotation(a_this, a_angle);
+			}
 		}
 		_Actor_SetRotationZ(a_this, a_angle);
 	}

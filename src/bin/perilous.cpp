@@ -18,7 +18,7 @@ float get_perilous_chance(RE::Actor* a_actor) {
 	if (a_actor->GetActorRuntimeData().combatController) {
 		RE::TESCombatStyle* style = a_actor->GetActorRuntimeData().combatController->combatStyle;
 		if (style) {
-			return style->generalData.offensiveMult;
+			return style->generalData.offensiveMult * settings::fPerilous_chance_multiplier;
 		}
 	}
 	return 0.f;
@@ -26,6 +26,9 @@ float get_perilous_chance(RE::Actor* a_actor) {
 
 void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 {
+	if (!settings::bPerilous_enable) {
+		return;
+	}
 	if (a_actor->IsPlayerRef()) {
 		return;
 	}
@@ -58,11 +61,11 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 		}
 	}
 
-	//if (Utils::Actor::isPowerAttacking(a_actor)) { /*Power Perilous*/
+	if (Utils::Actor::isPowerAttacking(a_actor)) { /*Power Perilous*/
 		perform_perilous_attack(a_actor, target); 
-	//} else {/*Light perilous*/
+	} else {/*Light perilous*/
 
-	//}
+	}
 
 }
 

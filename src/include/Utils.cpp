@@ -327,27 +327,27 @@ bool ValhallaUtils::is_adversary(RE::Actor* actor1, RE::Actor* actor2)
 		is_adversary = true;
 	}
 
-	//if (!is_adversary) {
-	//	auto combatGroup = actor1->GetCombatGroup();
-	//	if (combatGroup) {
-	//		for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
-	//			if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor2) {
-	//				is_adversary = true;
-	//			}
-	//		}
-	//	}
-	//}
+	if (!is_adversary) {
+		auto combatGroup = actor1->GetCombatGroup();
+		if (combatGroup) {
+			for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
+				if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor2) {
+					is_adversary = true;
+				}
+			}
+		}
+	}
 
-	//if (!is_adversary) {
-	//	auto combatGroup = actor2->GetCombatGroup();
-	//	if (combatGroup) {
-	//		for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
-	//			if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor1) {
-	//				is_adversary = true;
-	//			}
-	//		}
-	//	}
-	//}
+	if (!is_adversary) {
+		auto combatGroup = actor2->GetCombatGroup();
+		if (combatGroup) {
+			for (auto it = combatGroup->targets.begin(); it != combatGroup->targets.end(); ++it) {
+				if (it->targetHandle && it->targetHandle.get().get() && it->targetHandle.get().get() == actor1) {
+					is_adversary = true;
+				}
+			}
+		}
+	}
 	return is_adversary;
 }
 
