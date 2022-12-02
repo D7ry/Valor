@@ -148,6 +148,14 @@ dodge_direction dodge::get_dodge_direction(RE::Actor* a_actor, RE::Actor* a_atta
 	return dodge_direction::kForward; /*defaults to backward dodging for now*/
 }
 
+static const char* GVI_dodge_dir = "Dodge_Direction";
+static const char* AE_dodge = "Dodge";
+inline void dmco_dodge(RE::Actor* a_actor, dodge_direction a_direction, const char* a_event) {
+	a_actor->SetGraphVariableInt(GVI_dodge_dir, a_direction);
+	a_actor->NotifyAnimationGraph(a_event);
+	a_actor->NotifyAnimationGraph(AE_dodge);
+}
+
 void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)
 {
 	switch (a_direction) {
@@ -157,13 +165,17 @@ void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)
 			a_actor->NotifyAnimationGraph("TKDodgeForward");
 			break;
 		case 1:
-			a_actor->NotifyAnimationGraph("Dodge");
+			dmco_dodge(a_actor, a_direction, "Dodge_F");
+			break;
 		}
 		break;
 	case dodge_direction::kBackward:
 		switch (settings::iDodgeFramework) {
 		case 0:
 			a_actor->NotifyAnimationGraph("TKDodgeBack");
+			break;
+		case 1:
+			dmco_dodge(a_actor, a_direction, "Dodge_B");
 			break;
 		}
 		break;
@@ -172,6 +184,9 @@ void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)
 		case 0:
 			a_actor->NotifyAnimationGraph("TKDodgeLeft");
 			break;
+		case 1:
+			dmco_dodge(a_actor, a_direction, "Dodge_L");
+			break;
 		}
 		break;
 	case dodge_direction::kRight:
@@ -179,16 +194,39 @@ void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)
 		case 0:
 			a_actor->NotifyAnimationGraph("TKDodgeRight");
 			break;
+		case 1:
+			dmco_dodge(a_actor, a_direction, "Dodge_R");
+			break;
 		}
 		break;
 	/*Only possible for DMCO*/
 	case dodge_direction::kLeftBackward:
+		switch (settings::iDodgeFramework) {
+		case 1:
+			dmco_dodge(a_actor, a_direction, "Dodge_LB");
+			break;
+		}
 		break;
 	case dodge_direction::kLeftForward:
+		switch (settings::iDodgeFramework) {
+		case 1:
+			dmco_dodge(a_actor, a_direction, "Dodge_LF");
+			break;
+		}
 		break;
 	case dodge_direction::kRightBackward:
+		switch (settings::iDodgeFramework) {
+		case 1:
+			dmco_dodge(a_actor, a_direction, "Dodge_RB");
+			break;
+		}
 		break;
 	case dodge_direction::kRightForward:
+		switch (settings::iDodgeFramework) {
+		case 1:
+			dmco_dodge(a_actor, a_direction, "Dodge_RF");
+			break;
+		}
 		break;
 	}
 }
