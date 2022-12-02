@@ -113,7 +113,7 @@ namespace hooks
 	{
 		switch (settings::iDodgeFramework) {
 		case 0:
-			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_back);
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_back);
 			break;
 
 		}
@@ -125,7 +125,7 @@ namespace hooks
 	{
 		switch (settings::iDodgeFramework) {
 		case 0:
-			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_horizontal);
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_horizontal);
 			break;
 		}
 		
@@ -137,7 +137,7 @@ namespace hooks
 	{
 		switch (settings::iDodgeFramework) {
 		case 0:
-			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge::dodge_directions_tk_back);
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_back);
 			break;
 		}
 		
@@ -148,7 +148,7 @@ namespace hooks
 	{
 		switch (settings::iDodgeFramework) {
 		case 0:
-			dodge::GetSingleton()->attempt_dodge(a_actor, dodge::dodge_directions_tk_all, true);
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_all, true);
 			break;
 		}
 		

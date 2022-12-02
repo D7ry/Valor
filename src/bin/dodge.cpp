@@ -35,10 +35,10 @@ void dodge::react_to_attack(RE::Actor* a_attacker)
 			}
 			switch (settings::iDodgeFramework) {
 			case 0:
-				dodge::GetSingleton()->attempt_dodge(refr, {dodge_direction::kBackward, dodge_direction::kLeft, dodge_direction::kRight, dodge_direction::kForward });
+				dodge::GetSingleton()->attempt_dodge(refr, &dodge_directions_tk_all);
 				break;
 			case 1:
-				dodge::GetSingleton()->attempt_dodge(refr, dodge_directions_dmco_all);
+				dodge::GetSingleton()->attempt_dodge(refr, &dodge_directions_dmco_all);
 				break;
 			}
 		}
@@ -47,7 +47,7 @@ void dodge::react_to_attack(RE::Actor* a_attacker)
 }
 
 /*Attempt to dodge an incoming threat, choosing one of the directions from A_DIRECTIONS.*/
-void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_directions, bool a_forceDodge)
+void dodge::attempt_dodge(RE::Actor* a_actor, const dodge_dir_set* a_directions, bool a_forceDodge)
 {
 	
 	if (!settings::bDodgeAI_enable) {
@@ -66,13 +66,14 @@ void dodge::attempt_dodge(RE::Actor* a_actor, std::vector<dodge_direction> a_dir
 	if (!able_dodge(a_actor)) {
 		return;
 	}
+	
+	/* Make a copy and shuffle directions. */
+	dodge_dir_set directions = *a_directions;
+	std::shuffle(directions.begin(), directions.end(), gen); 
 
-	/*Shuffle directions*/
-	std::shuffle(a_directions.begin(), a_directions.end(), rd);  //shuffle directions
-
-	for (auto it = a_directions.begin(); it != a_directions.end(); ++it) {
+	for (auto it = directions.begin(); it != directions.end(); ++it) {
 		dodge_direction direction = *it;
-		RE::NiPoint3 dodge_dest = Utils::get_abs_pos(a_actor, get_dodge_vector(*it));
+		RE::NiPoint3 dodge_dest = Utils::get_abs_pos(a_actor, get_dodge_vector(direction));
 		if (can_goto(a_actor, dodge_dest)) {
 			do_dodge(a_actor, direction);
 			return;
@@ -142,7 +143,7 @@ bool dodge::can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest)
 
 
 /*Get the direction the actor should dodge in.*/
-dodge::dodge_direction dodge::get_dodge_direction(RE::Actor* a_actor, RE::Actor* a_attacker)
+dodge_direction dodge::get_dodge_direction(RE::Actor* a_actor, RE::Actor* a_attacker)
 {
 	return dodge_direction::kForward; /*defaults to backward dodging for now*/
 }
