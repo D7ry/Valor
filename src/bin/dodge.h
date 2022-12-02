@@ -1,6 +1,8 @@
 #pragma once
 #include "PCH.h"
 #include "include/lib/TrueHUDAPI.h"
+#include <unordered_set>
+#include <shared_mutex>
 
 enum dodge_direction
 {
@@ -52,6 +54,9 @@ public:
 
 	void react_to_attack(RE::Actor* a_attacker);
 
+	void set_dodge_phase(RE::Actor* a_dodger, bool a_isDodging);
+	bool get_is_dodging(RE::Actor* a_actor);
+
 private:
 	
 	bool able_dodge(RE::Actor* a_actor);
@@ -63,5 +68,8 @@ private:
 	void do_dodge(RE::Actor* a_actor, dodge_direction a_direction);
 
 	RE::NiPoint3 get_dodge_vector(dodge_direction a_direction);
+
+	std::unordered_set<RE::ActorHandle> dodging_actors;
+	mutable std::shared_mutex dodging_actors_lock;
 	
 };

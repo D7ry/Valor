@@ -43,6 +43,9 @@ namespace hooks
 			return;
 		}
 		std::string_view eventTag = a_event->tag.data();
+		//if (a_event->holder->IsPlayerRef()) {
+		//	logger::info("event: {}", a_event->tag);
+		//}
 		switch (hash(eventTag.data(), eventTag.size())) {
 		case "preHitFrame"_h:
 			dodge::GetSingleton()->react_to_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
@@ -94,6 +97,13 @@ namespace hooks
 		case "MCO_TransitionClose"_h:
 			AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kNone);
 			break;
+		case "MCO_DodgeInitiate"_h:
+			dodge::GetSingleton()->set_dodge_phase(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>(), true);
+			break;
+		case "MCO_DodgeStop"_h:
+		case "DodgeStop"_h:
+			dodge::GetSingleton()->set_dodge_phase(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>(), false);
+			break;
 		}
 	}
 
@@ -115,7 +125,9 @@ namespace hooks
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_back);
 			break;
-
+		case 1:
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_dmco_back);
+			break;
 		}
 		
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
@@ -126,6 +138,9 @@ namespace hooks
 		switch (settings::iDodgeFramework) {
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_horizontal);
+			break;
+		case 1:
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_dmco_horizontal);
 			break;
 		}
 		
@@ -139,6 +154,9 @@ namespace hooks
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_back);
 			break;
+		case 1:
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_dmco_back);
+			break;
 		}
 		
 		return _create_path(a_actor, a_newPos, a3, speed_ind);
@@ -149,6 +167,9 @@ namespace hooks
 		switch (settings::iDodgeFramework) {
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_all, true);
+			break;
+		case 1:
+			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_dmco_all, true);
 			break;
 		}
 		
@@ -188,6 +209,9 @@ namespace hooks
 		case AttackState::atk_state::kEnd:
 			angleDelta *= settings::fNPCCommitment_AttackEndMult;
 			break;
+		}
+		if (dodge::GetSingleton()->get_is_dodging(a_actor)) { // dodge commitment.
+			angleDelta = 0;
 		}
 		a_angle = a_actor->data.angle.z + angleDelta;
 	}

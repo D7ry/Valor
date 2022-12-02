@@ -2,6 +2,9 @@
 #include "include/Utils.h"
 #include "include/lib/TrueHUDAPI.h"
 #include <algorithm>
+using writeLock = std::unique_lock<std::shared_mutex>;
+using readLock = std::shared_lock<std::shared_mutex>;
+
 #define PI 3.1415926535f
 
 /*Get the dodge chance of a reactive dodger in case of an incoming attack.*/
@@ -44,6 +47,32 @@ void dodge::react_to_attack(RE::Actor* a_attacker)
 		}
 		return RE::BSContainer::ForEachResult::kContinue;
 	});
+}
+
+void dodge::set_dodge_phase(RE::Actor* a_dodger, bool a_isDodging)
+{
+	auto handle = a_dodger->GetHandle();
+	if (handle) {
+		writeLock(dodging_actors_lock);
+		if (a_isDodging) {
+			if (!dodging_actors.contains(handle)) {
+				dodging_actors.insert(handle);
+			}
+		} else {
+			dodging_actors.erase(handle);
+		}
+	}
+}
+
+bool dodge::get_is_dodging(RE::Actor* a_actor)
+{
+	auto handle = a_actor->GetHandle();
+	if (handle) {
+		readLock l(dodging_actors_lock);
+		return dodging_actors.contains(handle);
+	}
+	return false;
+	
 }
 
 /*Attempt to dodge an incoming threat, choosing one of the directions from A_DIRECTIONS.*/
@@ -234,27 +263,41 @@ void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)
 RE::NiPoint3 dodge::get_dodge_vector(dodge_direction a_direction)
 {
 	RE::NiPoint3 ret;
+	ret.z = 0;
 	switch (a_direction) {
 	case kForward:
 		ret.x = 0;
 		ret.y = settings::iDodgeAI_Distance;
-		ret.z = 0;
 		break;
 	case kBackward:
 		ret.x = 0;
 		ret.y = -settings::iDodgeAI_Distance;
-		ret.z = 0;
 		break;
 	case kLeft:
 		ret.x = -settings::iDodgeAI_Distance;
 		ret.y = 0;
-		ret.z = 0;
 		break;
 	case kRight:
 		ret.x = settings::iDodgeAI_Distance;
 		ret.y = 0;
-		ret.z = 0;
+		break;
+	case kLeftBackward:
+		ret.x = -settings::iDodgeAI_Distance_2;
+		ret.y = -settings::iDodgeAI_Distance_2;
+		break;
+	case kLeftForward:
+		ret.x = -settings::iDodgeAI_Distance_2;
+		ret.y = settings::iDodgeAI_Distance_2;
+		break;
+	case kRightBackward:
+		ret.x = settings::iDodgeAI_Distance_2;
+		ret.y = -settings::iDodgeAI_Distance_2;
+		break;
+	case kRightForward:
+		ret.x = settings::iDodgeAI_Distance_2;
+		ret.y = settings::iDodgeAI_Distance_2;
 		break;
 	}
+	
 	return ret;
 }

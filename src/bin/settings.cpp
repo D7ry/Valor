@@ -13,6 +13,7 @@ void settings::read()
 	
 	reader.FETCH(iDodgeFramework);
 	reader.FETCH(iDodgeAI_Distance);
+	iDodgeAI_Distance_2 = iDodgeAI_Distance / SQRT2;
 	reader.FETCH(iDodgeAI_permissibleDist);
 	reader.FETCH(iDodgeAI_reactive_reactDist);
 	reader.FETCH(fDodgeAI_chanceMult);
