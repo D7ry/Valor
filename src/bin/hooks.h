@@ -99,8 +99,8 @@ namespace hooks
 		static void install()
 		{
 			auto& trampoline = SKSE::GetTrampoline();
-			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46590, 00000) }; //SE::1407D1740
-			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x82E, 0x000), create_path);
+			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46590, 47802) };  //SE::sub_1407D1740+82E	call    Character__sub_14083BE20 AE::1407FC830 + 7A0 call 14086B7C0
+			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x82E, 0x7A0), create_path);
 			logger::info("hook:on_combatBehavior_dodgethreat_createPath");
 		}
 		
