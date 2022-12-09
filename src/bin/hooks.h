@@ -50,8 +50,8 @@ namespace hooks
 		static void install()
 		{
 			auto& trampoline = SKSE::GetTrampoline();
-			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46724, 00000) }; //SE::1407D8C90
-			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x2D0, 0x000), create_path);
+			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46724, 47920) }; //SE::sub_1407D8C90+2D0	call    Character__sub_14083BE20 AE:: sub_140804020+284	call    sub_14086B7C0
+			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x2D0, 0x284), create_path); //SE::
 			logger::info("hook:on_combatBehavior_backoff_createPath");
 		}
 		
@@ -67,8 +67,8 @@ namespace hooks
 		static void install()
 		{
 			auto& trampoline = SKSE::GetTrampoline();
-			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46720, 00000) }; //SE::1407D8200
-			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x593, 0x000), create_path);
+			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46720, 47916) };  //SE::sub_1407D8200+593	call    Character__sub_14083BE20 AE:: 140803580+5F0 CALL 14086B7C0
+			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x593, 0x5F0), create_path);
 			logger::info("hook:on_combatBehaiovr_circle_createPath");
 		}
 		
@@ -83,8 +83,8 @@ namespace hooks
 		static void install()
 		{
 			auto& trampoline = SKSE::GetTrampoline();
-			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46712, 00000) }; //SE::1407D73D0
-			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x299, 0x000), create_path);
+			REL::Relocation<std::uintptr_t> on_combatBehavior_backoff{ RELOCATION_ID(46712, 47908) };  //SE::sub_1407D73D0+299	call    Character__sub_14083BE20 AE::sub_140802680+257	call    sub_14086B7C0
+			_create_path = trampoline.write_call<5>(on_combatBehavior_backoff.address() + RELOCATION_OFFSET(0x299, 0x257), create_path);
 			logger::info("hook:on_combatBehavior_fallback_createPath");
 		}
 		
