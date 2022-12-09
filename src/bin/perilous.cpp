@@ -7,7 +7,7 @@ void perilous::init()
 {
 	DtryUtils::formLoader loader2("ValhallaCombat.esp");
 	loader2.log();
-	DtryUtils::formLoader loader3("Valgrind.esp");
+	DtryUtils::formLoader loader3("Valor.esp");
 	loader3.load(perilousHitEffectArt, 0xd69);
 	loader3.load(perilousSound, 0xd6a);
 	loader3.load(perilousSpell, 0xD6B);

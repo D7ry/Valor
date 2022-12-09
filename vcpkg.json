@@ -1,5 +1,5 @@
 {
-  "name": "valgrind",
+  "name": "valor",
   "version": "1",
   "dependencies": [
     "fast-cpp-csv-parser",

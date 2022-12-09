@@ -196,21 +196,28 @@ namespace hooks
 	}
 
 
-	inline void offsetRotation(RE::Actor* a_actor, float& a_angle) 
+	inline void offset_NPC_rotation(RE::Actor* a_actor, float& a_angle) 
 	{
-		float angleDelta = Utils::math::NormalRelativeAngle(a_angle - a_actor->data.angle.z);
-		switch (AttackState::GetSingleton()->get_atk_state(a_actor->GetHandle())) {
-		case AttackState::atk_state::kStart:
-			angleDelta *= settings::fNPCCommitment_AttackStartMult;
-			break;
-		case AttackState::atk_state::kMid:
-			angleDelta *= settings::fNPCCommitment_AttackMidMult;
-			break;
-		case AttackState::atk_state::kEnd:
-			angleDelta *= settings::fNPCCommitment_AttackEndMult;
-			break;
+		if (a_actor->IsPlayerRef()) {
+			return;
 		}
-		if (dodge::GetSingleton()->get_is_dodging(a_actor)) { // dodge commitment.
+		float angleDelta = Utils::math::NormalRelativeAngle(a_angle - a_actor->data.angle.z);
+		/* Attack commitment */
+		if (settings::bNPCCommitment_enable && a_actor->IsAttacking()) { 
+			switch (AttackState::GetSingleton()->get_atk_state(a_actor->GetHandle())) {
+			case AttackState::atk_state::kStart:
+				angleDelta *= settings::fNPCCommitment_AttackStartMult;
+				break;
+			case AttackState::atk_state::kMid:
+				angleDelta *= settings::fNPCCommitment_AttackMidMult;
+				break;
+			case AttackState::atk_state::kEnd:
+				angleDelta *= settings::fNPCCommitment_AttackEndMult;
+				break;
+			}
+		}
+		/* Dodge commitment */
+		if (settings::bDodgeAI_enable && dodge::GetSingleton()->get_is_dodging(a_actor)) {  
 			angleDelta = 0;
 		}
 		a_angle = a_actor->data.angle.z + angleDelta;
@@ -219,21 +226,13 @@ namespace hooks
 	
 	void on_set_rotation::Actor_SetRotationX(RE::Actor* a_this, float a_angle)
 	{
-		if (!a_this->IsPlayerRef()) {
-			if (settings::bNPCCommitment_enable && a_this->IsAttacking()) {
-				offsetRotation(a_this, a_angle);
-			}
-		}
+		offset_NPC_rotation(a_this, a_angle);
 		_Actor_SetRotationX(a_this, a_angle);
 	}
 
 	void on_set_rotation::Actor_SetRotationZ(RE::Actor* a_this, float a_angle)
 	{
-		if (!a_this->IsPlayerRef()) {
-			if (settings::bNPCCommitment_enable && a_this->IsAttacking()) {
-				offsetRotation(a_this, a_angle);
-			}
-		}
+		offset_NPC_rotation(a_this, a_angle);
 		_Actor_SetRotationZ(a_this, a_angle);
 	}
 

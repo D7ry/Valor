@@ -9,6 +9,7 @@
 
 #define CONSOLELOG(msg) RE::ConsoleLog::GetSingleton()->Print(msg);
 #define PI 3.1415926535897932384626f
+
 class debug
 {
 public:

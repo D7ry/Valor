@@ -97,11 +97,10 @@ void dodge::attempt_dodge(RE::Actor* a_actor, const dodge_dir_set* a_directions,
 	}
 	
 	/* Make a copy and shuffle directions. */
-	dodge_dir_set directions = *a_directions;
-	std::shuffle(directions.begin(), directions.end(), gen); 
+	dodge_dir_set directions_shuffled = *a_directions;
+	std::shuffle(directions_shuffled.begin(), directions_shuffled.end(), gen); 
 
-	for (auto it = directions.begin(); it != directions.end(); ++it) {
-		dodge_direction direction = *it;
+	for (dodge_direction direction : directions_shuffled) {
 		RE::NiPoint3 dodge_dest = Utils::get_abs_pos(a_actor, get_dodge_vector(direction));
 		if (can_goto(a_actor, dodge_dest)) {
 			do_dodge(a_actor, direction);
@@ -155,7 +154,7 @@ bool dodge::can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest)
 			debug::getsingleton()->debugAPI->DrawLine(a_actor->GetPosition(), dest, 1.f, 0xff00ff);  //green line
 		}
 		
-		/*Cast 4 rays from the actor, parallel to the dodging path to check for any obstacles.*/
+		/*Cast 3 rays from the actor, parallel to the dodging path to check for any obstacles.*/
 		float obstacleDist = 0; /*Distance to the obstacle, if any*/
 		dest.z += a_actor->GetHeight() * 1 / 4;
 		noObstacle &= DtryUtils::rayCast::cast_ray(a_actor, dest, 0.25f, &obstacleDist) == nullptr || obstacleDist >= settings::iDodgeAI_permissibleDist;
