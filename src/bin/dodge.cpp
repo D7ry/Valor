@@ -36,6 +36,9 @@ void dodge::react_to_attack(RE::Actor* a_attacker)
 			if (ValhallaUtils::isBackFacing(a_attacker, refr)) { //no need to react to an attack if the attacker isn't facing you.
 				return RE::BSContainer::ForEachResult::kContinue;
 			}
+			if (refr->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kNone) {
+				return RE::BSContainer::ForEachResult::kContinue;
+			}
 			switch (settings::iDodgeFramework) {
 			case 0:
 				dodge::GetSingleton()->attempt_dodge(refr, &dodge_directions_tk_all);
@@ -99,6 +102,7 @@ void dodge::attempt_dodge(RE::Actor* a_actor, const dodge_dir_set* a_directions,
 	/* Make a copy and shuffle directions. */
 	dodge_dir_set directions_shuffled = *a_directions;
 	std::shuffle(directions_shuffled.begin(), directions_shuffled.end(), gen); 
+
 
 	for (dodge_direction direction : directions_shuffled) {
 		RE::NiPoint3 dodge_dest = Utils::get_abs_pos(a_actor, get_dodge_vector(direction));
@@ -178,10 +182,16 @@ dodge_direction dodge::get_dodge_direction(RE::Actor* a_actor, RE::Actor* a_atta
 
 static const char* GVI_dodge_dir = "Dodge_Direction";
 static const char* AE_dodge = "Dodge";
-inline void dmco_dodge(RE::Actor* a_actor, dodge_direction a_direction, const char* a_event) {
-	a_actor->SetGraphVariableInt(GVI_dodge_dir, a_direction);
-	a_actor->NotifyAnimationGraph(a_event);
-	a_actor->NotifyAnimationGraph(AE_dodge);
+void dmco_dodge(RE::Actor* a_actor, dodge_direction a_direction, const char* a_event) {
+	auto task = SKSE::GetTaskInterface();
+	if (!task) {
+		return;
+	}
+	task->AddTask([a_actor, a_direction, a_event]() {
+		a_actor->SetGraphVariableInt(GVI_dodge_dir, a_direction);
+		a_actor->NotifyAnimationGraph(a_event);
+		a_actor->NotifyAnimationGraph(AE_dodge);
+	});
 }
 
 void dodge::do_dodge(RE::Actor* a_actor, dodge_direction a_direction)

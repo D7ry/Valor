@@ -21,6 +21,11 @@ public:
 	TRUEHUD_API::IVTrueHUD3* debugAPI;
 };
 
+#define ASSERT(CONDITION)                            \
+	if (CONDITION) {                                 \
+	} else {                                         \
+		logger::critical("assertion {} failed.", #CONDITION); \
+	}
 namespace Utils
 {
 	template <typename Iter, typename RandomGenerator>
@@ -59,6 +64,8 @@ namespace Utils
 		bool isPowerAttacking(RE::Actor* a_actor);
 		bool isHumanoid(RE::Actor* a_actor);
 		void getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos);
+		void getHeadPos(RE::Actor* a_actor, RE::NiPoint3& pos);
+		void getHeadPos(RE::Actor* a_actor, RE::NiAVObject*& pos);
 		void dropShield(RE::Actor* a_actor);
 	}
 

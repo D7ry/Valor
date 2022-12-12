@@ -296,8 +296,35 @@ void Utils::Actor::getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos)
 	if (!targetPoint) {
 		return;
 	}
-
 	pos = targetPoint->world.translate;
+}
+
+void Utils::Actor::getHeadPos(RE::Actor* a_actor, RE::NiPoint3& pos) 
+{
+	RE::NiAVObject* targetPoint = nullptr;
+	getHeadPos(a_actor, targetPoint);
+	if (!targetPoint) {
+		return;
+	}
+	pos = targetPoint->world.translate;
+}
+
+void Utils::Actor::getHeadPos(RE::Actor* a_actor, RE::NiAVObject*& pos)
+{
+	if (!a_actor->GetActorRuntimeData().race) {
+		return;
+	}
+	RE::BGSBodyPart* headPart = a_actor->GetActorRuntimeData().race->bodyPartData->parts[RE::BGSBodyPartDefs::LIMB_ENUM::kHead];
+	if (!headPart) {
+		logger::info("headpart not found");
+		return;
+	}
+	auto targetPoint = a_actor->GetNodeByName(headPart->targetName.c_str());
+	if (!targetPoint) {
+		logger::info("target point not found");
+		return;
+	}
+	pos = targetPoint;
 }
 
 void Utils::Actor::dropShield(RE::Actor* a_actor)

@@ -20,11 +20,11 @@ public:
 	static inline int iDodgeFramework = 0;            /*TKRE = 0; DMCO = 1*/
 	
 	static inline float fDodgeAI_chanceMult = 1; /*Chance multiplier for reactive dodge AI.*/
-	static inline int iDodgeAI_reactive_reactDist = 350;      /**/
-	static inline int iDodgeAI_Distance = 300;          /*Distance of a single dodge, used for pathing.*/
-	static inline int iDodgeAI_Distance_2 = iDodgeAI_Distance / SQRT2; /* Cached coordinate distance.*/
+	static inline float iDodgeAI_reactive_reactDist = 350;               /**/
+	static inline float iDodgeAI_Distance = 300;          /*Distance of a single dodge, used for pathing.*/
+	static inline float iDodgeAI_Distance_2 = iDodgeAI_Distance / SQRT2; /* Cached coordinate distance.*/
 	
-	static inline int iDodgeAI_permissibleDist = 200;        /*Acceptable distance of a single dodge. 
+	static inline float iDodgeAI_permissibleDist = 200; /*Acceptable distance of a single dodge. 
 													  * Sometimes the dodger can get obstructed by a wall before completing the whole dodge while already making a big displacement.
 													  * AI would take dodges that can make this displacement as a permissible(tho suboptimal) dodge and still make the dodge.*/
 	static inline bool bEnableDebugDraw = false;

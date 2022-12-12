@@ -8,7 +8,9 @@ void perilous::init()
 	DtryUtils::formLoader loader2("ValhallaCombat.esp");
 	loader2.log();
 	DtryUtils::formLoader loader3("Valor.esp");
-	loader3.load(perilousHitEffectArt, 0xd69);
+	loader3.load(perilousHitEffectArt_yellow, 0xd69);
+	loader3.load(perilousHitEffectArt_red, 0xd6f);
+	loader3.load(perilousHitEffectArt_blue, 0xd70);
 	loader3.load(perilousSound, 0xd6a);
 	loader3.load(perilousSpell, 0xD6B);
 	loader3.log();
@@ -24,12 +26,16 @@ float get_perilous_chance(RE::Actor* a_actor) {
 	return 0.f;
 }
 
+/* Attempt to initiate a perilous attack for A_ACTOR based on many variables and conditions. 
+* Actor MUST be doing a power attack already.
+*/
 void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 {
+	logger::info("Attempting to start perilous attack for {}", a_actor->GetName());
 	if (!settings::bPerilous_enable) {
 		return;
 	}
-	if (a_actor->IsPlayerRef()) {
+	if (a_actor->IsPlayerRef() || !a_actor->IsInCombat()) {
 		return;
 	}
 	
@@ -37,54 +43,52 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 	if (!target) {
 		return;
 	}
-
-	float chance = get_perilous_chance(a_actor);
-	if (chance <= 0.f) {
-		return;
-	}
-	
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> dis(0.f, 1.f);
-	if (dis(gen) > chance) {
-		return;
-	}
-	
 	attempt_end_perilous_attack(a_actor);  //End the previous perilous attack if any.
+
+	bool success = false;
 	
-	{
-		readLock lock(perilous_counter_lock);
-		auto it = perilous_counter.find(target);
-		if (it != perilous_counter.end()) {
-			if (it->second >= MAX_PERILOUS_ATTACKER) {
-				return;
+	float chance = get_perilous_chance(a_actor);
+	logger::info("chance: {}", chance);
+	if (chance > 0.f) {
+		std::mt19937 gen(rd());
+		std::uniform_real_distribution<> dis(0.f, 1.f);
+		if (dis(gen) <= chance) {
+			success = true;  // trigger special perilous attack
+		}
+	}
+	
+	if (success) {
+		{
+			readLock lock(perilous_counter_lock);
+			auto it = perilous_counter.find(target);
+			if (it != perilous_counter.end()) {
+				success = it->second < MAX_PERILOUS_ATTACKER;  // limit max # of actors doing perilous attacks to a specific actor to avoid chaos
 			}
 		}
 	}
 
-	if (Utils::Actor::isPowerAttacking(a_actor)) { /*Power Perilous*/
-		perform_perilous_attack(a_actor, target); 
-	} else {/*Light perilous*/
-
+	if (success) {
+		logger::info(
+			"performing perilous attack!");
+		perform_perilous_attack(a_actor, target);
+	} else {
+		play_perilous_attack_vfx(a_actor, PERILOUS_TYPE::yellow); // still play the yellow VFX to signify a power attack
 	}
 
 }
 
 /*Flag the actor as perilous attacker for other mods&plugins.*/
-void perilous::flag_perilous(RE::Actor* a_actor)
+inline void perilous::flag_perilous(RE::Actor* a_actor, perilous::PERILOUS_TYPE a_type)
 {
-	if (!a_actor->HasSpell(perilousSpell)) {
-		a_actor->AddSpell(perilousSpell);
-	}
+	a_actor->SetGraphVariableInt(gv_int_perilous_attack_type, static_cast<int>(a_type));
 }
-void perilous::unflag_perilous(RE::Actor* a_actor)
+inline void perilous::unflag_perilous(RE::Actor* a_actor)
 {
-	if (a_actor->HasSpell(perilousSpell)) {
-		a_actor->RemoveSpell(perilousSpell);
-	}
+	a_actor->SetGraphVariableInt(gv_int_perilous_attack_type, 0);
 }
 
 
-void perilous::attempt_end_perilous_attack(RE::Actor* a_actor) 
+void perilous::attempt_end_perilous_attack(RE::Actor* a_actor)
 {
 	if (a_actor->IsPlayerRef()) {
 		return;
@@ -99,21 +103,36 @@ void perilous::attempt_end_perilous_attack(RE::Actor* a_actor)
 		writeLock lock(perilous_attacks_lock);
 		perilous_attacks.erase(a_actor->GetHandle());
 	}
-	/*Decrement the counter for the target*/
-	{
-		writeLock lock(perilous_counter_lock);
-		auto it = perilous_counter.find(target);
-		if (it != perilous_counter.end()) {
-			it->second--;
-			if (it->second == 0) {
-				perilous_counter.erase(it);
-			}
-		}
-	}
-	
 }
 
-void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target)
+bool perilous::is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_target)
+{
+	readLock lock(perilous_attacks_lock);
+	auto it = perilous_attacks.find(a_actor->GetHandle());
+	if (it != perilous_attacks.end()) {
+		r_target = it->second;
+		return true;
+	}
+	return false;
+}
+
+
+void perilous::play_perilous_attack_vfx(RE::Actor* a_actor, PERILOUS_TYPE a_type)
+{
+	RE::NiAVObject* fxNode = nullptr;
+	Utils::Actor::getHeadPos(a_actor, fxNode);
+	switch (a_type) {
+	case PERILOUS_TYPE::yellow:
+		a_actor->InstantiateHitArt(perilousHitEffectArt_yellow, 1.5, a_actor, false, false, fxNode);
+		break;
+	case PERILOUS_TYPE::red:
+		a_actor->InstantiateHitArt(perilousHitEffectArt_red, 1.5, a_actor, false, false, fxNode);
+		break;
+	}
+}
+
+
+void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target)//TODO: add blue perilous attack
 {
 	/*increment counter*/
 	{
@@ -131,34 +150,22 @@ void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_tar
 		perilous_attacks.emplace(a_actor->GetHandle(), a_target);
 	}
 
-	flag_perilous(a_actor);
+	flag_perilous(a_actor, PERILOUS_TYPE::red);
 
 	/*VFX*/
-	RE::NiAVObject* fxNode = nullptr;
-	if (Utils::Actor::isHumanoid(a_actor)) {
-		fxNode = a_actor->GetNodeByName("WEAPON");
-	} else {
-		fxNode = a_actor->GetNodeByName("NPC Head");
-	}
-	a_actor->InstantiateHitArt(perilousHitEffectArt, 1, a_actor, false, false, fxNode);
+	play_perilous_attack_vfx(a_actor, PERILOUS_TYPE::red);
 	/*SFX*/
 	Utils::playSound(a_actor, perilousSound, 1.f);  //TODO: increase the sound mult if the target is player.
-	
-	
+
 	if (settings::bPerilous_chargeTime_enable) {
 		AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_chargeTime_multiplier, settings::fPerilous_chargeTime_duration);
 	}
-
 }
 
-bool perilous::is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_target)
+bool perilous::is_perilous_attacking(RE::Actor* a_actor)
 {
 	readLock lock(perilous_attacks_lock);
-	auto it = perilous_attacks.find(a_actor->GetHandle());
-	if (it != perilous_attacks.end()) {
-		r_target = it->second;
-		return true;
-	}
-	return false;
+	return perilous_attacks.contains(a_actor->GetHandle());
 }
+
 

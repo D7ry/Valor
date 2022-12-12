@@ -10,7 +10,7 @@ namespace hooks
 	{
 		on_attack_action::install();
 	}
-
+	
 	/// <summary>
 	/// Handle perilous attacking.
 	/// </summary>
@@ -18,6 +18,9 @@ namespace hooks
 	/// <returns>Whether the attack action is performed.</returns>
 	bool on_attack_action::perform_atk_action(RE::TESActionData* a_actionData)
 	{
+		if (!settings::bPerilous_enable) {
+			return _perform_atk_action(a_actionData);
+		}
 		if (!a_actionData) {
 			return _perform_atk_action(a_actionData);
 		}
@@ -30,10 +33,7 @@ namespace hooks
 		if (!actor) {
 			return _perform_atk_action(a_actionData);
 		}
-		if (settings::bPerilous_enable) {
-			//perilous::GetSingleton()->attempt_start_perilous_attack(actor);
-		}
-
+		
 		return _perform_atk_action(a_actionData);
 	}
 
@@ -43,15 +43,20 @@ namespace hooks
 			return;
 		}
 		std::string_view eventTag = a_event->tag.data();
-		//if (a_event->holder->IsPlayerRef()) {
-		//	logger::info("event: {}", a_event->tag);
-		//}
+
 		switch (hash(eventTag.data(), eventTag.size())) {
 		case "preHitFrame"_h:
-			dodge::GetSingleton()->react_to_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
-			perilous::GetSingleton()->attempt_start_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
-			if (AttackState::GetSingleton()->get_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle()) != AttackState::AttackState::kMid) {
-				AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kStart);
+			{
+				RE::Actor* actor = const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>();
+				dodge::GetSingleton()->react_to_attack(actor);
+				{
+					if (AttackState::GetSingleton()->get_atk_state(actor->GetHandle()) != AttackState::atk_state::kMid) {  //none, end => start
+						AttackState::GetSingleton()->set_atk_state(actor->GetHandle(), AttackState::AttackState::kStart);
+					}
+				}
+				if (Utils::Actor::isPowerAttacking(actor)) {
+					perilous::GetSingleton()->attempt_start_perilous_attack(actor);
+				}
 			}
 			break;
 		case "attackStop"_h:
@@ -78,7 +83,7 @@ namespace hooks
 			}
 			break;
 		// End phase
-		case "HitFrame"_h:
+		case "HitFrame"_h: //attack actually happens
 		case "attackWinStart"_h:
 		case "SkySA_AttackWinStart"_h:
 		case "MCO_WinOpen"_h:
@@ -97,6 +102,7 @@ namespace hooks
 		case "MCO_TransitionClose"_h:
 			AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kNone);
 			break;
+		//dodge phase setting
 		case "MCO_DodgeInitiate"_h:
 			dodge::GetSingleton()->set_dodge_phase(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>(), true);
 			break;
@@ -184,7 +190,7 @@ namespace hooks
 		if (attacker) {
 			RE::ActorHandle handle;
 			if (perilous::GetSingleton()->is_perilous_attacking(attacker, handle)) {
-				auto headingAngle = victim->GetHeadingAngle(attacker->GetPosition(), false);
+				auto headingAngle = victim->GetHeadingAngle(attacker);
 				auto direction = (headingAngle >= 0.0f) ? headingAngle / 360.0f : (360.0f + headingAngle) / 360.0f;
 				victim->SetGraphVariableFloat("staggerDirection", direction);
 				victim->SetGraphVariableFloat("StaggerMagnitude", 0.7);
