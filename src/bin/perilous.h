@@ -33,7 +33,7 @@ public:
 	void perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target);
 
 private:
-	const char* gv_int_perilous_attack_type = "perilous_attack_type";
+	const char* gv_int_perilous_attack_type = "val_perilous_attack_type";
 	inline void flag_perilous(RE::Actor* a_actor, perilous::PERILOUS_TYPE a_type);
 	inline void unflag_perilous(RE::Actor* a_actor);
 

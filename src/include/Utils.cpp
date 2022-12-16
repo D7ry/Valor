@@ -309,6 +309,7 @@ void Utils::Actor::getHeadPos(RE::Actor* a_actor, RE::NiPoint3& pos)
 	pos = targetPoint->world.translate;
 }
 
+/* Get A_ACTOR's head position, storing it in POS.*/
 void Utils::Actor::getHeadPos(RE::Actor* a_actor, RE::NiAVObject*& pos)
 {
 	if (!a_actor->GetActorRuntimeData().race) {
@@ -316,12 +317,10 @@ void Utils::Actor::getHeadPos(RE::Actor* a_actor, RE::NiAVObject*& pos)
 	}
 	RE::BGSBodyPart* headPart = a_actor->GetActorRuntimeData().race->bodyPartData->parts[RE::BGSBodyPartDefs::LIMB_ENUM::kHead];
 	if (!headPart) {
-		logger::info("headpart not found");
 		return;
 	}
 	auto targetPoint = a_actor->GetNodeByName(headPart->targetName.c_str());
 	if (!targetPoint) {
-		logger::info("target point not found");
 		return;
 	}
 	pos = targetPoint;

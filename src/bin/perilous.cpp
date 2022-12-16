@@ -8,8 +8,8 @@ void perilous::init()
 	DtryUtils::formLoader loader2("ValhallaCombat.esp");
 	loader2.log();
 	DtryUtils::formLoader loader3("Valor.esp");
-	loader3.load(perilousHitEffectArt_yellow, 0xd69);
-	loader3.load(perilousHitEffectArt_red, 0xd6f);
+	loader3.load(perilousHitEffectArt_yellow, 0xd6f);
+	loader3.load(perilousHitEffectArt_red, 0xd69);
 	loader3.load(perilousHitEffectArt_blue, 0xd70);
 	loader3.load(perilousSound, 0xd6a);
 	loader3.load(perilousSpell, 0xD6B);
@@ -48,7 +48,6 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 	bool success = false;
 	
 	float chance = get_perilous_chance(a_actor);
-	logger::info("chance: {}", chance);
 	if (chance > 0.f) {
 		std::mt19937 gen(rd());
 		std::uniform_real_distribution<> dis(0.f, 1.f);
@@ -68,13 +67,8 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 	}
 
 	if (success) {
-		logger::info(
-			"performing perilous attack!");
 		perform_perilous_attack(a_actor, target);
-	} else {
-		play_perilous_attack_vfx(a_actor, PERILOUS_TYPE::yellow); // still play the yellow VFX to signify a power attack
 	}
-
 }
 
 /*Flag the actor as perilous attacker for other mods&plugins.*/
@@ -103,10 +97,28 @@ void perilous::attempt_end_perilous_attack(RE::Actor* a_actor)
 		writeLock lock(perilous_attacks_lock);
 		perilous_attacks.erase(a_actor->GetHandle());
 	}
+	/* Decrement counter for target*/
+	{
+		writeLock lock(perilous_counter_lock);
+		auto it = perilous_counter.find(target);
+		if (it != perilous_counter.end()) {
+			it->second--;
+			if (it->second <= 0) {
+				perilous_counter.erase(it);
+			}
+		}
+	}
 }
 
 bool perilous::is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_target)
 {
+	int type;
+	if (!a_actor->GetGraphVariableInt("gv_int_perilous_attack_type", type)) {
+		return false;
+	}
+	if (type == static_cast<int>(PERILOUS_TYPE::none)) {
+		return false;
+	}
 	readLock lock(perilous_attacks_lock);
 	auto it = perilous_attacks.find(a_actor->GetHandle());
 	if (it != perilous_attacks.end()) {
