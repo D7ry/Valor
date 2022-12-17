@@ -1,6 +1,7 @@
 #include "dodge.h"
 #include "include/Utils.h"
 #include "include/lib/TrueHUDAPI.h"
+#include "APIHandler.h"
 #include <algorithm>
 using writeLock = std::unique_lock<std::shared_mutex>;
 using readLock = std::shared_lock<std::shared_mutex>;
@@ -122,6 +123,12 @@ bool dodge::able_dodge(RE::Actor* a_actor)
 	if (a_actor->AsActorState()->GetAttackState() != RE::ATTACK_STATE_ENUM::kNone) {
 		return false;
 	}
+
+	if (API::ValhallaCombat_API_acquired) {
+		if (API::_ValhallaCombat_API->isActorExhausted(a_actor) || API::_ValhallaCombat_API->isActorStunned(a_actor)) {
+			return false;
+		}
+	}
 		
 	return true;
 }
@@ -155,7 +162,9 @@ bool dodge::can_goto(RE::Actor* a_actor, RE::NiPoint3 a_dest)
 	if (canNavigate) {
 		RE::NiPoint3 dest = gotoNavdest ? nav_dest : raycast_dest;
 		if (settings::bEnableDebugDraw) {
-			debug::getsingleton()->debugAPI->DrawLine(a_actor->GetPosition(), dest, 1.f, 0xff00ff);  //green line
+			if (API::TrueHUD_API_acquired) {
+				API::_TrueHud_API->DrawLine(a_actor->GetPosition(), dest, 1.f, 0xff00ff);  //green line
+			}
 		}
 		
 		/*Cast 3 rays from the actor, parallel to the dodging path to check for any obstacles.*/

@@ -5,7 +5,7 @@ class settings
 {
 public:
 	static void read();
-	
+
 	/*Perilous*/
 	inline static bool bPerilous_enable = true;
 	static inline bool bPerilous_chargeTime_enable = true; /*Beginning of perilous attacks are performed slower to simulate a charging effect and giving the player time to react.*/ 

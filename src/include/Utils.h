@@ -10,17 +10,6 @@
 #define CONSOLELOG(msg) RE::ConsoleLog::GetSingleton()->Print(msg);
 #define PI 3.1415926535897932384626f
 
-class debug
-{
-public:
-	static debug* getsingleton() {
-		static debug singleton;
-		return &singleton;
-	}
-
-	TRUEHUD_API::IVTrueHUD3* debugAPI;
-};
-
 #define ASSERT(CONDITION)                            \
 	if (CONDITION) {                                 \
 	} else {                                         \
@@ -154,9 +143,6 @@ namespace DtryUtils
 			RE::bhkPickData pick_data;
 			pick_data.rayInput.from = rayStart * havokWorldScale;
 			pick_data.rayInput.to = rayEnd * havokWorldScale;
-			if (settings::bEnableDebugDraw) {
-				debug::getsingleton()->debugAPI->DrawArrow(rayStart, rayEnd, 10, 1);
-			}
 			auto pc = RE::PlayerCharacter::GetSingleton();
 			if (!pc) {
 				return false;
@@ -168,9 +154,6 @@ namespace DtryUtils
 			if (pick_data.rayOutput.HasHit()) {
 				RE::NiPoint3 hitpos = rayStart + (rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
 				a_pos = hitpos;  //update the position to the hit position
-				if (settings::bEnableDebugDraw) {
-					debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3, GREEN);
-				}
 				return true;
 			}
 			return false;
@@ -186,9 +169,6 @@ namespace DtryUtils
 						/*Setup ray*/
 			pick_data.rayInput.from = rayStart * havokWorldScale;
 			pick_data.rayInput.to = a_rayEnd * havokWorldScale;
-			if (settings::bEnableDebugDraw) {
-				debug::getsingleton()->debugAPI->DrawArrow(rayStart, a_rayEnd, 10, 1);
-			}
 			
 			/*Setup collision filter, ignoring the actor.*/
 			uint32_t collisionFilterInfo = 0;
@@ -202,9 +182,6 @@ namespace DtryUtils
 				RE::NiPoint3 hitpos = rayStart + (a_rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
 				if (ret_rayDist) {
 					*ret_rayDist = hitpos.GetDistance(rayStart);
-				}
-				if (settings::bEnableDebugDraw) {
-					debug::getsingleton()->debugAPI->DrawPoint(hitpos, 10, 3);
 				}
 
 				auto collidable = pick_data.rayOutput.rootCollidable;

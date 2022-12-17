@@ -47,9 +47,7 @@ public:
 		static dodge singleton;
 		return &singleton;
 	}
-	
-	static void attempt_active_dodge(RE::Actor* a_dodger, RE::Actor* a_attacker);
-	
+		
 	void attempt_dodge(RE::Actor* a_actor, const dodge_dir_set* a_directions, bool a_forceDodge = false);
 
 	void react_to_attack(RE::Actor* a_attacker);

@@ -1,5 +1,6 @@
 #include "perilous.h"
 #include "include/Utils.h"
+#include "APIHandler.h"
 using writeLock = std::unique_lock<std::shared_mutex>;
 using readLock = std::shared_lock<std::shared_mutex>;
 
@@ -31,7 +32,6 @@ float get_perilous_chance(RE::Actor* a_actor) {
 */
 void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 {
-	logger::info("Attempting to start perilous attack for {}", a_actor->GetName());
 	if (!settings::bPerilous_enable) {
 		return;
 	}
@@ -42,6 +42,12 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 	auto target = a_actor->GetActorRuntimeData().currentCombatTarget;
 	if (!target) {
 		return;
+	}
+
+	if (API::ValhallaCombat_API_acquired) {
+		if (API::_ValhallaCombat_API->isActorExhausted(a_actor) || API::_ValhallaCombat_API->isActorStunned(a_actor)) {
+			return;
+		}
 	}
 	attempt_end_perilous_attack(a_actor);  //End the previous perilous attack if any.
 
