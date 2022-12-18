@@ -21,11 +21,15 @@ void settings::read()
 	reader.FETCH(bEnableDebugDraw);
 
 	reader.setActiveSection("Perilous");
-	reader.FETCH(bPerilous_enable);
-	reader.FETCH(bPerilous_chargeTime_enable);
-	reader.FETCH(fPerilous_chargeTime_multiplier);
-	reader.FETCH(fPerilous_chargeTime_duration);
-	reader.FETCH(fPerilous_chance_multiplier);
+	reader.FETCH(bPerilous_attack_enable);
+	reader.FETCH(bPerilous_attack_chargeTime_enable);
+	reader.FETCH(fPerilous_attack_chargeTime_multiplier);
+	reader.FETCH(fPerilous_attack_chargeTime_duration);
+	reader.FETCH(fPerilous_attack_chance_multiplier);
+	
+	reader.FETCH(bPerilous_bash_enable);
+	reader.FETCH(fPerilous_bash_chargeTime_multiplier);
+	reader.FETCH(fPerilous_bash_chargeTime_duration);
 	
 	reader.setActiveSection("AttackCommitment");
 	reader.FETCH(bNPCCommitment_enable);

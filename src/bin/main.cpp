@@ -4,6 +4,7 @@
 #include "dodge.h"
 #include "APIHandler.h"
 #include "include/Utils.h"
+#include "settings.h"
 
 
 void MessageHandler(SKSE::MessagingInterface::Message* a_msg)

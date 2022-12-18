@@ -181,37 +181,41 @@ void DtryUtils::formLoader::log()
 
 void AnimSpeedManager::setAnimSpeed(RE::ActorHandle a_actorHandle, float a_speedMult, float a_dur)
 {
-	auto it = _animSpeeds.find(a_actorHandle);
-	if (it != _animSpeeds.end()) {
-		it->second.speedMult = a_speedMult;
-		it->second.dur = a_dur;
-	} else {
-		_animSpeeds.emplace(a_actorHandle, AnimSpeedData{ a_speedMult, a_dur });
+	bool found = false;
+	{
+		READLOCK l(_animSpeedsLock);
+		auto it = _animSpeeds.find(a_actorHandle);
+		if (it != _animSpeeds.end()) {
+			found = true;
+			it->second.speedMult = a_speedMult;
+			it->second.dur = a_dur;
+		}
+	}
+	if (!found) {
+		{
+			WRITELOCK l(_animSpeedsLock);
+			_animSpeeds.emplace(a_actorHandle, AnimSpeedData{ a_speedMult, a_dur });
+		}
 	}
 }
 
 void AnimSpeedManager::revertAnimSpeed(RE::ActorHandle a_actorHandle)
 {
-	_animSpeedsLock.lock();
-	auto it = _animSpeeds.find(a_actorHandle);
-	if (it != _animSpeeds.end()) {
-		it->second.speedMult = 1.0f;
-		it->second.dur = 0.0f;
-	}
-	_animSpeedsLock.unlock();
+	WRITELOCK l(_animSpeedsLock);
+	_animSpeeds.erase(a_actorHandle);
 }
 
 void AnimSpeedManager::revertAllAnimSpeed()
 {
-	_animSpeedsLock.lock();
+	WRITELOCK l(_animSpeedsLock);
 	_animSpeeds.clear();
-	_animSpeedsLock.unlock();
 }
 
 void AnimSpeedManager::update(RE::ActorHandle a_actorHandle, float& a_deltaTime)
 {
+	bool untrack = false;
 	if (a_deltaTime > 0.f) {
-		_animSpeedsLock.lock();
+		READLOCK l(_animSpeedsLock);
 		auto it = _animSpeeds.find(a_actorHandle);
 		if (it != _animSpeeds.end()) {
 			float newHitstopLength = it->second.dur - a_deltaTime;
@@ -220,11 +224,14 @@ void AnimSpeedManager::update(RE::ActorHandle a_actorHandle, float& a_deltaTime)
 			float mult = 1.f;
 			if (newHitstopLength <= 0.f) {
 				mult = (a_deltaTime + newHitstopLength) / a_deltaTime;
-				_animSpeeds.erase(it);
+				untrack = true;
 			}
 			a_deltaTime *= it->second.speedMult + ((1.f - it->second.speedMult) * (1.f - mult));
 		}
-		_animSpeedsLock.unlock();
+	}
+	if (untrack) {
+		WRITELOCK l(_animSpeedsLock);
+		_animSpeeds.erase(a_actorHandle);
 	}
 }
 
@@ -270,7 +277,26 @@ bool Utils::Actor::isPowerAttacking(RE::Actor* a_actor)
 			auto attackData = highProcess->attackData;
 			if (attackData) {
 				auto flags = attackData->data.flags;
-				return flags.any(RE::AttackData::AttackFlag::kPowerAttack) && !flags.any(RE::AttackData::AttackFlag::kBashAttack);
+				return flags.any(RE::AttackData::AttackFlag::kPowerAttack);
+			}
+		}
+	}
+	return false;
+}
+
+bool Utils::Actor::isBashing(RE::Actor* a_actor)
+{
+	if (a_actor->AsActorState()->GetAttackState() == RE::ATTACK_STATE_ENUM::kBash) {
+		return true;
+	}
+	auto currentProcess = a_actor->GetActorRuntimeData().currentProcess;
+	if (currentProcess) {
+		auto highProcess = currentProcess->high;
+		if (highProcess) {
+			auto attackData = highProcess->attackData;
+			if (attackData) {
+				auto flags = attackData->data.flags;
+				return flags.any(RE::AttackData::AttackFlag::kBashAttack);
 			}
 		}
 	}
@@ -394,4 +420,71 @@ float Utils::math::NormalRelativeAngle(float a_angle)
 	while (a_angle < -PI)
 		a_angle += TWO_PI;
 	return a_angle;
+}
+
+/*Do a simple raycast at a singular point to check if anything exists there.
+		If anything exists, update A_POS argument to the position where raycast is hit.*/
+
+bool DtryUtils::rayCast::object_exists(RE::NiPoint3& a_pos, float a_range)
+{
+	RE::NiPoint3 rayStart = a_pos;
+	RE::NiPoint3 rayEnd = a_pos;
+	rayStart.z += a_range;
+	rayEnd.z -= a_range;
+	auto havokWorldScale = RE::bhkWorld::GetWorldScale();
+	RE::bhkPickData pick_data;
+	pick_data.rayInput.from = rayStart * havokWorldScale;
+	pick_data.rayInput.to = rayEnd * havokWorldScale;
+	auto pc = RE::PlayerCharacter::GetSingleton();
+	if (!pc) {
+		return false;
+	}
+	if (!pc->GetParentCell() || !pc->GetParentCell()->GetbhkWorld()) {
+		return false;
+	}
+	pc->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
+	if (pick_data.rayOutput.HasHit()) {
+		RE::NiPoint3 hitpos = rayStart + (rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
+		a_pos = hitpos;  //update the position to the hit position
+		return true;
+	}
+	return false;
+}
+
+/*Cast a ray from the center of the actor to a_rayEnd, return the first object encountered, or nullptr if nothing is hit.*/
+
+RE::TESObjectREFR* DtryUtils::rayCast::cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd, float a_castPos, float* ret_rayDist)
+{
+	auto havokWorldScale = RE::bhkWorld::GetWorldScale();
+	RE::bhkPickData pick_data;
+	RE::NiPoint3 rayStart = a_actor->GetPosition();
+	float castHeight = a_actor->GetHeight() * a_castPos;
+	rayStart.z += castHeight;  //cast from center of actor
+							   /*Setup ray*/
+	pick_data.rayInput.from = rayStart * havokWorldScale;
+	pick_data.rayInput.to = a_rayEnd * havokWorldScale;
+
+	/*Setup collision filter, ignoring the actor.*/
+	uint32_t collisionFilterInfo = 0;
+	a_actor->GetCollisionFilterInfo(collisionFilterInfo);
+	uint16_t collisionGroup = collisionFilterInfo >> 16;
+	pick_data.rayInput.filterInfo = (static_cast<uint32_t>(collisionGroup) << 16) | static_cast<uint32_t>(RE::COL_LAYER::kCharController);
+
+	/*Do*/
+	a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
+	if (pick_data.rayOutput.HasHit()) {
+		RE::NiPoint3 hitpos = rayStart + (a_rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
+		if (ret_rayDist) {
+			*ret_rayDist = hitpos.GetDistance(rayStart);
+		}
+
+		auto collidable = pick_data.rayOutput.rootCollidable;
+		if (collidable) {
+			RE::TESObjectREFR* ref = RE::TESHavokUtilities::FindCollidableRef(*collidable);
+			if (ref) {
+				return ref;
+			}
+		}
+	}
+	return nullptr;
 }

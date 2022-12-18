@@ -5,16 +5,12 @@
 #include "PCH.h"
 #include "bin/offsets.h"
 #include "include/lib/TrueHUDAPI.h"
-#include "bin/settings.h"
+#include <shared_mutex>
 
 #define CONSOLELOG(msg) RE::ConsoleLog::GetSingleton()->Print(msg);
 #define PI 3.1415926535897932384626f
 
-#define ASSERT(CONDITION)                            \
-	if (CONDITION) {                                 \
-	} else {                                         \
-		logger::critical("assertion {} failed.", #CONDITION); \
-	}
+
 namespace Utils
 {
 	template <typename Iter, typename RandomGenerator>
@@ -51,6 +47,7 @@ namespace Utils
 		bool isDualWielding(RE::Actor* a_actor);
 		bool isEquippedShield(RE::Actor* a_actor);
 		bool isPowerAttacking(RE::Actor* a_actor);
+		bool isBashing(RE::Actor* a_actor);
 		bool isHumanoid(RE::Actor* a_actor);
 		void getBodyPos(RE::Actor* a_actor, RE::NiPoint3& pos);
 		void getHeadPos(RE::Actor* a_actor, RE::NiPoint3& pos);
@@ -133,67 +130,9 @@ namespace DtryUtils
 
 		/*Do a simple raycast at a singular point to check if anything exists there.
 		If anything exists, update A_POS argument to the position where raycast is hit.*/
-		static bool object_exists(RE::NiPoint3& a_pos, float a_range = 30.f) 
-		{
-			RE::NiPoint3 rayStart = a_pos;
-			RE::NiPoint3 rayEnd = a_pos;
-			rayStart.z += a_range;
-			rayEnd.z -= a_range;
-			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
-			RE::bhkPickData pick_data;
-			pick_data.rayInput.from = rayStart * havokWorldScale;
-			pick_data.rayInput.to = rayEnd * havokWorldScale;
-			auto pc = RE::PlayerCharacter::GetSingleton();
-			if (!pc) {
-				return false;
-			}
-			if (!pc->GetParentCell() || !pc->GetParentCell()->GetbhkWorld()) {
-				return false;
-			}
-			pc->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
-			if (pick_data.rayOutput.HasHit()) {
-				RE::NiPoint3 hitpos = rayStart + (rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
-				a_pos = hitpos;  //update the position to the hit position
-				return true;
-			}
-			return false;
-		}
+		static bool object_exists(RE::NiPoint3& a_pos, float a_range = 30.f);
 		/*Cast a ray from the center of the actor to a_rayEnd, return the first object encountered, or nullptr if nothing is hit.*/
-		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd, float a_castPos = 0.5f, float* ret_rayDist = nullptr) 
-		{
-			auto havokWorldScale = RE::bhkWorld::GetWorldScale();
-			RE::bhkPickData pick_data;
-			RE::NiPoint3 rayStart = a_actor->GetPosition();
-			float castHeight = a_actor->GetHeight() * a_castPos;
-			rayStart.z += castHeight;  //cast from center of actor
-						/*Setup ray*/
-			pick_data.rayInput.from = rayStart * havokWorldScale;
-			pick_data.rayInput.to = a_rayEnd * havokWorldScale;
-			
-			/*Setup collision filter, ignoring the actor.*/
-			uint32_t collisionFilterInfo = 0;
-			a_actor->GetCollisionFilterInfo(collisionFilterInfo);
-			uint16_t collisionGroup = collisionFilterInfo >> 16;
-			pick_data.rayInput.filterInfo = (static_cast<uint32_t>(collisionGroup) << 16) | static_cast<uint32_t>(RE::COL_LAYER::kCharController);
-			
-			/*Do*/
-			a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
-			if (pick_data.rayOutput.HasHit()) {
-				RE::NiPoint3 hitpos = rayStart + (a_rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
-				if (ret_rayDist) {
-					*ret_rayDist = hitpos.GetDistance(rayStart);
-				}
-
-				auto collidable = pick_data.rayOutput.rootCollidable;
-				if (collidable) {
-					RE::TESObjectREFR* ref = RE::TESHavokUtilities::FindCollidableRef(*collidable);
-					if (ref) {
-						return ref;
-					}
-				}
-			}
-			return nullptr;
-		}
+		static RE::TESObjectREFR* cast_ray(RE::Actor* a_actor, RE::NiPoint3 a_rayEnd, float a_castPos = 0.5f, float* ret_rayDist = nullptr);
 				
 		
 	};
@@ -223,7 +162,7 @@ private:
 		float dur;
 	};
 	static inline std::unordered_map<RE::ActorHandle, AnimSpeedData> _animSpeeds = {};
-	static inline std::mutex _animSpeedsLock = std::mutex();
+	static inline std::shared_mutex _animSpeedsLock;
 
 	static void update(RE::ActorHandle a_actorHandle, float& a_deltaTime);
 	

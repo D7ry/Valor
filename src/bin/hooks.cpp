@@ -6,11 +6,12 @@
 #include "include/Utils.h"
 namespace hooks
 {
+	//TODO: add stagger hook to negate bash stagger on perilous attackers.
 	void install()
 	{
 		on_attack_action::install();
 	}
-	
+	static inline RE::BSFixedString cPtr_bashPowerStart = "bashPowerStart";
 	/// <summary>
 	/// Handle perilous attacking.
 	/// </summary>
@@ -18,7 +19,7 @@ namespace hooks
 	/// <returns>Whether the attack action is performed.</returns>
 	bool on_attack_action::perform_atk_action(RE::TESActionData* a_actionData)
 	{
-		if (!settings::bPerilous_enable) {
+		if (!settings::bPerilous_attack_enable) {
 			return _perform_atk_action(a_actionData);
 		}
 		if (!a_actionData) {
@@ -28,12 +29,13 @@ namespace hooks
 		if (!ref) {
 			return _perform_atk_action(a_actionData);
 		}
-
 		RE::Actor* actor = ref->As<RE::Actor>();
 		if (!actor) {
 			return _perform_atk_action(a_actionData);
 		}
-		
+		if (settings::bPerilous_bash_enable && strcmp(a_actionData->unk28.data(), "bashStart")) { /* Turn all regular bash into power bash*/
+			a_actionData->unk28 = cPtr_bashPowerStart;
+		}
 		return _perform_atk_action(a_actionData);
 	}
 
@@ -48,18 +50,19 @@ namespace hooks
 		case "preHitFrame"_h:
 			{
 				RE::Actor* actor = const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>();
-				dodge::GetSingleton()->react_to_attack(actor);
-				{
-					if (AttackState::GetSingleton()->get_atk_state(actor->GetHandle()) != AttackState::atk_state::kMid) {  //none, end => start
-						AttackState::GetSingleton()->set_atk_state(actor->GetHandle(), AttackState::AttackState::kStart);
-					}
+				if (AttackState::GetSingleton()->get_atk_state(actor->GetHandle()) != AttackState::atk_state::kMid) {  //none, end => start
+					AttackState::GetSingleton()->set_atk_state(actor->GetHandle(), AttackState::AttackState::kStart);
 				}
-				if (Utils::Actor::isPowerAttacking(actor)) {
+				if (Utils::Actor::isBashing(actor)) {
+					perilous::GetSingleton()->perform_perilous_bash(actor);
+				} else if (Utils::Actor::isPowerAttacking(actor)) {
 					perilous::GetSingleton()->attempt_start_perilous_attack(actor);
 				}
+				dodge::GetSingleton()->react_to_attack(actor);
 			}
 			break;
 		case "attackStop"_h:
+		case "bashStop"_h:
 			perilous::GetSingleton()->attempt_end_perilous_attack(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
 			AttackState::GetSingleton()->set_atk_state(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>()->GetHandle(), AttackState::AttackState::kNone);
 			break;
@@ -184,17 +187,27 @@ namespace hooks
 
 	}
 
+	static inline void stagger(RE::Actor* a_actor, RE::Actor* a_victim, float a_value = 1)
+	{
+		auto headingAngle = a_victim->GetHeadingAngle(a_actor);
+		auto direction = (headingAngle >= 0.0f) ? headingAngle / 360.0f : (360.0f + headingAngle) / 360.0f;
+		a_victim->SetGraphVariableFloat("staggerDirection", direction);
+		a_victim->SetGraphVariableFloat("StaggerMagnitude", a_value);
+		a_victim->NotifyAnimationGraph("staggerStart");
+	}
+	
 	void on_melee_hit::processHit(RE::Actor* victim, RE::HitData& hitData)
 	{
 		RE::Actor* attacker = hitData.aggressor.get().get();
 		if (attacker) {
 			RE::ActorHandle handle;
-			if (perilous::GetSingleton()->is_perilous_attacking(attacker, handle)) {
-				auto headingAngle = victim->GetHeadingAngle(attacker);
-				auto direction = (headingAngle >= 0.0f) ? headingAngle / 360.0f : (360.0f + headingAngle) / 360.0f;
-				victim->SetGraphVariableFloat("staggerDirection", direction);
-				victim->SetGraphVariableFloat("StaggerMagnitude", 0.7);
-				victim->NotifyAnimationGraph("staggerStart");
+			if (settings::bPerilous_attack_enable && perilous::GetSingleton()->is_perilous_attacking(attacker, handle)) {
+				stagger(attacker, victim);
+			} else if (settings::bPerilous_bash_enable) {
+				if (!victim->IsPlayerRef() && Utils::Actor::isBashing(attacker) && Utils::Actor::isBashing(victim)) {
+					AnimSpeedManager::revertAnimSpeed(victim->GetHandle());
+					stagger(attacker, victim, 10);
+				}
 			}
 		}
 

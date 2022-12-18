@@ -10,7 +10,7 @@ public:
 		none = 0,
 		yellow = 1, // all heavy attacks, cannot be blocked, can be parried, stagger on hit.
 		red = 2,     // cannot be blocked, cannot be parried, stagger on hit.
-		blue = 3	// cannot be blocked, cannot be parried, can be bashed to lead to attacker stagger, stagger on hit.
+		blue = 3	// (vanilla bash)cannot be blocked, cannot be parried, can be bashed to lead to attacker stagger, stagger on hit.
 	};
 	
 	static perilous* GetSingleton()
@@ -24,16 +24,18 @@ public:
 	void play_perilous_attack_vfx(RE::Actor* a_actor, enum PERILOUS_TYPE a_type);
 
 	void attempt_start_perilous_attack(RE::Actor* a_actor);
+	void perform_perilous_bash(RE::Actor* a_actor);
 
 	void attempt_end_perilous_attack(RE::Actor* a_actor);
 
 	bool is_perilous_attacking(RE::Actor* a_actor);
+	bool is_perilous_bashing(RE::Actor* a_actor);
 	bool is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_target);
 
 	void perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target);
 
 private:
-	const char* gv_int_perilous_attack_type = "val_perilous_attack_type";
+	static inline RE::BSFixedString gv_int_perilous_attack_type = "val_perilous_attack_type";
 	inline void flag_perilous(RE::Actor* a_actor, perilous::PERILOUS_TYPE a_type);
 	inline void unflag_perilous(RE::Actor* a_actor);
 
@@ -41,10 +43,10 @@ private:
 	
 	RE::SpellItem* perilousSpell;
 	RE::BGSSoundDescriptorForm* perilousSound;
-	RE::TESEffectShader* temp;
 	RE::BGSArtObject* perilousHitEffectArt_yellow;
 	RE::BGSArtObject* perilousHitEffectArt_red;
 	RE::BGSArtObject* perilousHitEffectArt_blue;
+	RE::BGSArtObject* temp;
 	
 	#define MAX_PERILOUS_ATTACKER 2
 

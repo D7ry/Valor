@@ -6,12 +6,16 @@ class settings
 public:
 	static void read();
 
-	/*Perilous*/
-	inline static bool bPerilous_enable = true;
-	static inline bool bPerilous_chargeTime_enable = true; /*Beginning of perilous attacks are performed slower to simulate a charging effect and giving the player time to react.*/ 
-	static inline float fPerilous_chargeTime_multiplier = 0.1 /*Animation speed during the charge phase.*/;
-	static inline float fPerilous_chargeTime_duration = 0.5; /*Duration of the charge phase.*/
-	static inline float fPerilous_chance_multiplier = 1;
+	/*Perilous attack*/
+	inline static bool bPerilous_attack_enable = true;
+	static inline bool bPerilous_attack_chargeTime_enable = true; /*Beginning of perilous attacks are performed slower to simulate a charging effect and giving the player time to react.*/ 
+	static inline float fPerilous_attack_chargeTime_multiplier = 0.1 /*Animation speed during the charge phase.*/;
+	static inline float fPerilous_attack_chargeTime_duration = 0.5; /*Duration of the charge phase.*/
+	static inline float fPerilous_attack_chance_multiplier = 1;
+	/*Perilous bash*/
+	static inline bool bPerilous_bash_enable = true;
+	static inline float fPerilous_bash_chargeTime_multiplier = 0.1;
+	static inline float fPerilous_bash_chargeTime_duration = 1;
 
 	/*Dodging*/
 	inline static bool bDodgeAI_enable = true; /*Global switch for dodge AI*/
