@@ -27,11 +27,8 @@ float get_perilous_chance(RE::Actor* a_actor) {
 /* Attempt to initiate a perilous attack for A_ACTOR based on many variables and conditions. 
 * Actor MUST be doing a power attack already.
 */
-void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
+void perilous::attempt_start_perilous_attack(RE::Actor* a_actor, enum PERILOUS_TYPE a_type)
 {
-	if (!settings::bPerilous_attack_enable) {
-		return;
-	}
 	if (a_actor->IsPlayerRef() || !a_actor->IsInCombat()) {
 		return;
 	}
@@ -50,14 +47,19 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 
 	bool success = false;
 	
-	float chance = get_perilous_chance(a_actor);
-	if (chance > 0.f) {
-		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> dis(0.f, 1.f);
-		if (dis(gen) <= chance) {
-			success = true;  // trigger special perilous attack
+	if (a_type == PERILOUS_TYPE::red) {
+		float chance = get_perilous_chance(a_actor);
+		if (chance > 0.f) {
+			std::mt19937 gen(rd());
+			std::uniform_real_distribution<> dis(0.f, 1.f);
+			if (dis(gen) <= chance) {
+				success = true;
+			}
 		}
+	} else {
+		success = true; // blue attacks are forced to be true.
 	}
+
 	
 	if (success) {
 		{
@@ -70,23 +72,8 @@ void perilous::attempt_start_perilous_attack(RE::Actor* a_actor)
 	}
 
 	if (success) {
-		perform_perilous_attack(a_actor, target);
+		perform_perilous_attack(a_actor, target, a_type);
 	}
-}
-
-/* Start a perilous bash and play a fx. All vanilla bash made by NPCs counts as perilous bash.*/
-void perilous::perform_perilous_bash(RE::Actor* a_actor)
-{
-	if (!settings::bPerilous_bash_enable) {
-		return;
-	}
-	if (a_actor->IsPlayerRef() || !a_actor->IsInCombat()) {
-		return;
-	}
-	play_perilous_attack_vfx(a_actor, PERILOUS_TYPE::blue);
-	Utils::playSound(a_actor, perilousSound);
-	AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_bash_chargeTime_multiplier, settings::fPerilous_bash_chargeTime_duration);
-	flag_perilous(a_actor, PERILOUS_TYPE::blue);
 }
 
 /*Flag the actor as perilous attacker through a graph variable, for other mods&plugins.
@@ -107,12 +94,13 @@ void perilous::attempt_end_perilous_attack(RE::Actor* a_actor)
 	if (a_actor->IsPlayerRef()) {
 		return;
 	}
-	unflag_perilous(a_actor);  //unflag the attack regardless
 
 	RE::ActorHandle target;
 	if (!is_perilous_attacking(a_actor, target)) {
 		return;
 	}
+	unflag_perilous(a_actor);
+
 	/*Remove the actor from the perilous_attacks map*/
 	{
 		WRITELOCK lock(perilous_attacks_lock);
@@ -150,7 +138,7 @@ bool perilous::is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_targ
 }
 
 
-void perilous::play_perilous_attack_vfx(RE::Actor* a_actor, PERILOUS_TYPE a_type)
+void perilous::play_perilous_attack_vfx(RE::Actor* a_actor, enum PERILOUS_TYPE a_type)
 {
 	RE::NiAVObject* fxNode = nullptr;
 	Utils::Actor::getHeadPos(a_actor, fxNode);
@@ -160,7 +148,6 @@ void perilous::play_perilous_attack_vfx(RE::Actor* a_actor, PERILOUS_TYPE a_type
 		break;
 	case PERILOUS_TYPE::red:
 		a_actor->InstantiateHitArt(perilousHitEffectArt_red, 1.5, a_actor, false, false, fxNode);
-		a_actor->InstantiateHitArt(perilousHitEffectArt_yellow, 1.5, a_actor, false, false, fxNode);
 		break;
 	case PERILOUS_TYPE::blue:
 		a_actor->InstantiateHitArt(perilousHitEffectArt_blue, 1.5, a_actor, false, false, fxNode);
@@ -168,8 +155,13 @@ void perilous::play_perilous_attack_vfx(RE::Actor* a_actor, PERILOUS_TYPE a_type
 	}
 }
 
+void perilous::play_perilous_attack_sfx(RE::Actor* a_actor, PERILOUS_TYPE a_type)
+{
+	Utils::playSound(a_actor, perilousSound, 1.f);  //TODO: increase the sound mult if the target is player.
+}
 
-void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target)//TODO: add blue perilous attack
+
+void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target, enum PERILOUS_TYPE a_type)
 {
 	/*increment counter*/
 	{
@@ -187,15 +179,21 @@ void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_tar
 		perilous_attacks.emplace(a_actor->GetHandle(), a_target);
 	}
 
-	flag_perilous(a_actor, PERILOUS_TYPE::red);
+	flag_perilous(a_actor, a_type);
 
-	/*VFX*/
-	play_perilous_attack_vfx(a_actor, PERILOUS_TYPE::red);
-	/*SFX*/
-	Utils::playSound(a_actor, perilousSound, 1.f);  //TODO: increase the sound mult if the target is player.
+	play_perilous_attack_vfx(a_actor, a_type);
+	play_perilous_attack_sfx(a_actor, a_type);
 
-	if (settings::bPerilous_attack_chargeTime_enable) {
-		AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_attack_chargeTime_multiplier, settings::fPerilous_attack_chargeTime_duration);
+	switch (a_type) {
+	case PERILOUS_TYPE::yellow:
+	case PERILOUS_TYPE::red:
+		if (settings::bPerilous_attack_chargeTime_enable) {
+			AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_attack_chargeTime_multiplier, settings::fPerilous_attack_chargeTime_duration);
+		}
+		break;
+	case PERILOUS_TYPE::blue:
+		AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_bash_chargeTime_multiplier, settings::fPerilous_bash_chargeTime_duration);
+		break;
 	}
 }
 

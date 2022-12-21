@@ -22,9 +22,9 @@ public:
 	void init();
 	
 	void play_perilous_attack_vfx(RE::Actor* a_actor, enum PERILOUS_TYPE a_type);
+	void play_perilous_attack_sfx(RE::Actor* a_actor, enum PERILOUS_TYPE a_type);
 
-	void attempt_start_perilous_attack(RE::Actor* a_actor);
-	void perform_perilous_bash(RE::Actor* a_actor);
+	void attempt_start_perilous_attack(RE::Actor* a_actor, enum PERILOUS_TYPE a_type);
 
 	void attempt_end_perilous_attack(RE::Actor* a_actor);
 
@@ -32,7 +32,7 @@ public:
 	bool is_perilous_bashing(RE::Actor* a_actor);
 	bool is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_target);
 
-	void perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target);
+	void perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target, enum PERILOUS_TYPE a_type);
 
 private:
 	static inline RE::BSFixedString gv_int_perilous_attack_type = "val_perilous_attack_type";

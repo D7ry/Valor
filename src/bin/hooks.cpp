@@ -33,7 +33,7 @@ namespace hooks
 		if (!actor) {
 			return _perform_atk_action(a_actionData);
 		}
-		if (settings::bPerilous_bash_enable && strcmp(a_actionData->unk28.data(), "bashStart")) { /* Turn all regular bash into power bash*/
+		if (settings::bPerilous_bash_enable && strcmp(a_actionData->unk28.data(), "bashStart") == 0) { /* Turn all regular bash into power bash*/
 			a_actionData->unk28 = cPtr_bashPowerStart;
 		}
 		return _perform_atk_action(a_actionData);
@@ -53,10 +53,10 @@ namespace hooks
 				if (AttackState::GetSingleton()->get_atk_state(actor->GetHandle()) != AttackState::atk_state::kMid) {  //none, end => start
 					AttackState::GetSingleton()->set_atk_state(actor->GetHandle(), AttackState::AttackState::kStart);
 				}
-				if (Utils::Actor::isBashing(actor)) {
-					perilous::GetSingleton()->perform_perilous_bash(actor);
-				} else if (Utils::Actor::isPowerAttacking(actor)) {
-					perilous::GetSingleton()->attempt_start_perilous_attack(actor);
+				if (settings::bPerilous_bash_enable && Utils::Actor::isBashing(actor)) {
+					perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::blue);
+				} else if (settings::bPerilous_attack_enable && Utils::Actor::isPowerAttacking(actor)) {
+					perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::red);
 				}
 				dodge::GetSingleton()->react_to_attack(actor);
 			}

@@ -469,7 +469,6 @@ RE::TESObjectREFR* DtryUtils::rayCast::cast_ray(RE::Actor* a_actor, RE::NiPoint3
 	a_actor->GetCollisionFilterInfo(collisionFilterInfo);
 	uint16_t collisionGroup = collisionFilterInfo >> 16;
 	pick_data.rayInput.filterInfo = (static_cast<uint32_t>(collisionGroup) << 16) | static_cast<uint32_t>(RE::COL_LAYER::kCharController);
-
 	/*Do*/
 	a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
 	if (pick_data.rayOutput.HasHit()) {
