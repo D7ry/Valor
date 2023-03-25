@@ -18,7 +18,7 @@ float get_perilous_chance(RE::Actor* a_actor) {
 	if (a_actor->GetActorRuntimeData().combatController) {
 		RE::TESCombatStyle* style = a_actor->GetActorRuntimeData().combatController->combatStyle;
 		if (style) {
-			return style->generalData.offensiveMult * settings::fPerilous_attack_chance_multiplier;
+			return style->generalData.offensiveMult * settings::fPerilousAttack_Chance_Mult;
 		}
 	}
 	return 0.f;
@@ -27,7 +27,7 @@ float get_perilous_chance(RE::Actor* a_actor) {
 /* Attempt to initiate a perilous attack for A_ACTOR based on many variables and conditions. 
 * Actor MUST be doing a power attack already.
 */
-void perilous::attempt_start_perilous_attack(RE::Actor* a_actor, enum PERILOUS_TYPE a_type)
+void perilous::attempt_start_perilous_attack(RE::Actor* a_actor, PERILOUS_TYPE a_type)
 {
 	if (a_actor->IsPlayerRef() || !a_actor->IsInCombat()) {
 		return;
@@ -101,11 +101,6 @@ void perilous::attempt_end_perilous_attack(RE::Actor* a_actor)
 	}
 	unflag_perilous(a_actor);
 
-	/*Remove the actor from the perilous_attacks map*/
-	{
-		WRITELOCK lock(perilous_attacks_lock);
-		perilous_attacks.erase(a_actor->GetHandle());
-	}
 	/* Decrement counter for target*/
 	{
 		WRITELOCK lock(perilous_counter_lock);
@@ -115,6 +110,12 @@ void perilous::attempt_end_perilous_attack(RE::Actor* a_actor)
 				perilous_counter.erase(it);
 			}
 		}
+	}
+
+	/*Remove the actor from the perilous_attacks map*/
+	{
+		WRITELOCK lock(perilous_attacks_lock);
+		perilous_attacks.erase(a_actor->GetHandle());
 	}
 }
 
@@ -133,12 +134,11 @@ bool perilous::is_perilous_attacking(RE::Actor* a_actor, RE::ActorHandle& r_targ
 		r_target = it->second;
 		return true;
 	}
-	NOT_REACHED("Actor's graph variable is flagged as perilous, but actor isn't tracked in the map.");
 	return false;
 }
 
 
-void perilous::play_perilous_attack_vfx(RE::Actor* a_actor, enum PERILOUS_TYPE a_type)
+void perilous::play_perilous_attack_vfx(RE::Actor* a_actor, PERILOUS_TYPE a_type)
 {
 	RE::NiAVObject* fxNode = nullptr;
 	Utils::Actor::getHeadPos(a_actor, fxNode);
@@ -161,7 +161,7 @@ void perilous::play_perilous_attack_sfx(RE::Actor* a_actor, PERILOUS_TYPE a_type
 }
 
 
-void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target, enum PERILOUS_TYPE a_type)
+void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_target, PERILOUS_TYPE a_type)
 {
 	/*increment counter*/
 	{
@@ -187,14 +187,26 @@ void perilous::perform_perilous_attack(RE::Actor* a_actor, RE::ActorHandle a_tar
 	switch (a_type) {
 	case PERILOUS_TYPE::yellow:
 	case PERILOUS_TYPE::red:
-		if (settings::bPerilous_attack_chargeTime_enable) {
-			AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_attack_chargeTime_multiplier, settings::fPerilous_attack_chargeTime_duration);
+		if (settings::bPerilousAttack_ChargeTime_Enable) {
+			AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilousAttack_ChargeTime_Mult, settings::fPerilousAttack_ChargeTime_Duration);
 		}
 		break;
 	case PERILOUS_TYPE::blue:
-		AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilous_bash_chargeTime_multiplier, settings::fPerilous_bash_chargeTime_duration);
+		AnimSpeedManager::setAnimSpeed(a_actor->GetHandle(), settings::fPerilousBash_ChargeTime_Mult, settings::fPerilousBash_ChargeTime_Duration);
 		break;
 	}
+}
+
+void perilous::clear()
+{
+	WRITELOCK l1(perilous_attacks_lock);
+	perilous_attacks.clear();
+	l1.unlock();
+	
+	
+	WRITELOCK l2(perilous_counter_lock);
+	perilous_counter.clear();
+	l2.unlock();
 }
 
 bool perilous::is_perilous_attacking(RE::Actor* a_actor)

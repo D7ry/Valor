@@ -7,32 +7,32 @@ void settings::read()
 {
 	DtryUtils::settingsLoader reader(SETTINGFILE_PATH);
 	reader.setActiveSection("Dodge");
-	reader.FETCH(bDodgeAI_enable);
-	reader.FETCH(bDodgeAI_passive_enable);
-	reader.FETCH(bDodgeAI_reactive_enable);
+	reader.FETCH(bDodgeAI_Enable);
+	reader.FETCH(bDodgeAI_Passive_enable);
+	reader.FETCH(bDodgeAI_Reactive_enable);
 	
-	reader.FETCH(iDodgeFramework);
-	reader.FETCH(iDodgeAI_Distance);
-	iDodgeAI_Distance_2 = iDodgeAI_Distance / SQRT2;
-	reader.FETCH(iDodgeAI_permissibleDist);
-	reader.FETCH(iDodgeAI_reactive_reactDist);
-	reader.FETCH(fDodgeAI_chanceMult);
+	reader.FETCH(iDodgeAI_Framework);
+	reader.FETCH(iDodgeAI_DodgeDist);
+	fDodgeAI_DodgeDist2 = iDodgeAI_DodgeDist / SQRT2;
+	reader.FETCH(fDodgeAI_DodgeDist_Permissible);
+	reader.FETCH(iDodgeAI_Reactive_Dist);
+	reader.FETCH(fDodgeAI_Chance_Mult);
 	
-	reader.FETCH(bEnableDebugDraw);
+	reader.FETCH(bDodgeAI_DebugDraw_Enable);
 
 	reader.setActiveSection("Perilous");
-	reader.FETCH(bPerilous_attack_enable);
-	reader.FETCH(bPerilous_attack_chargeTime_enable);
-	reader.FETCH(fPerilous_attack_chargeTime_multiplier);
-	reader.FETCH(fPerilous_attack_chargeTime_duration);
-	reader.FETCH(fPerilous_attack_chance_multiplier);
+	reader.FETCH(bPerilousAttack_Enable);
+	reader.FETCH(bPerilousAttack_ChargeTime_Enable);
+	reader.FETCH(fPerilousAttack_ChargeTime_Mult);
+	reader.FETCH(fPerilousAttack_ChargeTime_Duration);
+	reader.FETCH(fPerilousAttack_Chance_Mult);
 	
-	reader.FETCH(bPerilous_bash_enable);
-	reader.FETCH(fPerilous_bash_chargeTime_multiplier);
-	reader.FETCH(fPerilous_bash_chargeTime_duration);
+	reader.FETCH(bPerilousBash_Enable);
+	reader.FETCH(fPerilousBash_ChargeTime_Mult);
+	reader.FETCH(fPerilousBash_ChargeTime_Duration);
 	
 	reader.setActiveSection("AttackCommitment");
-	reader.FETCH(bNPCCommitment_enable);
+	reader.FETCH(bNPCCommitment_Enable);
 	reader.FETCH(fNPCCommitment_AttackStartMult);
 	reader.FETCH(fNPCCommitment_AttackMidMult);
 	reader.FETCH(fNPCCommitment_AttackEndMult);

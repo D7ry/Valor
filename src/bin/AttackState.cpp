@@ -4,7 +4,7 @@
 
 void AttackState::clean_atk_state(RE::ActorHandle a_handle)
 {
-	if (!settings::bNPCCommitment_enable) {
+	if (!settings::bNPCCommitment_Enable) {
 		return;
 	}
 	WRITELOCK l(_atk_state_map_lock);
@@ -13,7 +13,7 @@ void AttackState::clean_atk_state(RE::ActorHandle a_handle)
 
 void AttackState::set_atk_state(RE::ActorHandle a_handle, atk_state a_state)
 {
-	if (!settings::bNPCCommitment_enable) {
+	if (!settings::bNPCCommitment_Enable) {
 		return;
 	}
 	WRITELOCK l(_atk_state_map_lock);
@@ -22,7 +22,7 @@ void AttackState::set_atk_state(RE::ActorHandle a_handle, atk_state a_state)
 
 AttackState::atk_state AttackState::get_atk_state(RE::ActorHandle a_handle)
 {
-	if (!settings::bNPCCommitment_enable) {
+	if (!settings::bNPCCommitment_Enable) {
 		return kNone;
 	}
 	READLOCK l(_atk_state_map_lock);

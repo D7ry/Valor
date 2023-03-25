@@ -15,7 +15,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 		hooks::on_animation_event::install();
 		hooks::on_melee_hit::install();
 		hooks::on_set_rotation::install();
-		if (settings::bDodgeAI_passive_enable) {  //install hooks for passive dodge
+		if (settings::bDodgeAI_Passive_enable) {  //install hooks for passive dodge
 			hooks::on_combatBehavior_backoff_createPath::install();
 			hooks::on_combatBehavior_circle_createPath::install();
 			hooks::on_combatBehavior_dodgethreat_createPath::install();
@@ -27,6 +27,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 		API::init();
 		break;
 	case SKSE::MessagingInterface::kPostLoadGame:
+		perilous::GetSingleton()->clear();
 		break;
 	}
 }

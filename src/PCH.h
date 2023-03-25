@@ -42,13 +42,5 @@ namespace std
 
 #define RELOCATION_OFFSET(SE, AE) REL::VariantOffset(SE, AE, 0).offset()
 
-#define ASSERT(CONDITION)                                     \
-	if (CONDITION) {                                          \
-	} else {                                                  \
-		logger::critical("assertion {} failed.", #CONDITION); \
-	}
-
 #define NOT_REACHED(...) logger::critical("This code should not be reached because {}.", __VA_ARGS__);
-#define WRITELOCK std::unique_lock<std::shared_mutex>
-#define READLOCK std::shared_lock<std::shared_mutex>
 #include "Plugin.h"

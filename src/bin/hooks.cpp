@@ -4,6 +4,7 @@
 #include "dodge.h"
 #include "AttackState.h"
 #include "include/Utils.h"
+#include "block.h"
 namespace hooks
 {
 	//TODO: add stagger hook to negate bash stagger on perilous attackers.
@@ -19,22 +20,14 @@ namespace hooks
 	/// <returns>Whether the attack action is performed.</returns>
 	bool on_attack_action::perform_atk_action(RE::TESActionData* a_actionData)
 	{
-		if (!settings::bPerilous_attack_enable) {
+		if (!settings::bPerilousAttack_Enable || !a_actionData) {
 			return _perform_atk_action(a_actionData);
 		}
-		if (!a_actionData) {
-			return _perform_atk_action(a_actionData);
-		}
-		auto ref = a_actionData->source.get();
-		if (!ref) {
-			return _perform_atk_action(a_actionData);
-		}
-		RE::Actor* actor = ref->As<RE::Actor>();
-		if (!actor) {
-			return _perform_atk_action(a_actionData);
-		}
-		if (settings::bPerilous_bash_enable && strcmp(a_actionData->unk28.data(), "bashStart") == 0) { /* Turn all regular bash into power bash*/
-			a_actionData->unk28 = cPtr_bashPowerStart;
+		static RE::BSFixedString bashStart;
+		if (settings::bPerilousBash_Enable) { /* Turn all regular bash into power bash*/
+			if (a_actionData->unk28 == "bashStart"sv) {
+				a_actionData->unk28 = cPtr_bashPowerStart;
+			}
 		}
 		return _perform_atk_action(a_actionData);
 	}
@@ -45,21 +38,22 @@ namespace hooks
 			return;
 		}
 		std::string_view eventTag = a_event->tag.data();
-
+		INFO("Event: {}", eventTag);
+		RE::Actor* actor = const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>();
 		switch (hash(eventTag.data(), eventTag.size())) {
-		case "preHitFrame"_h:
-			{
-				RE::Actor* actor = const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>();
-				if (AttackState::GetSingleton()->get_atk_state(actor->GetHandle()) != AttackState::atk_state::kMid) {  //none, end => start
-					AttackState::GetSingleton()->set_atk_state(actor->GetHandle(), AttackState::AttackState::kStart);
-				}
-				if (settings::bPerilous_bash_enable && Utils::Actor::isBashing(actor)) {
-					perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::blue);
-				} else if (settings::bPerilous_attack_enable && Utils::Actor::isPowerAttacking(actor)) {
-					perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::red);
-				}
-				dodge::GetSingleton()->react_to_attack(actor);
+		case "SoundPlay.NPCHumanCombatShieldBashPower"_h:
+			if (settings::bPerilousBash_Enable) {
+				perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::blue);
 			}
+			break;
+		case "preHitFrame"_h:
+			if (AttackState::GetSingleton()->get_atk_state(actor->GetHandle()) != AttackState::atk_state::kMid) {  //none, end => start
+				AttackState::GetSingleton()->set_atk_state(actor->GetHandle(), AttackState::AttackState::kStart);
+			}
+			if (settings::bPerilousAttack_Enable && Utils::Actor::isPowerAttacking(actor)) {
+				perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::red);
+			}
+			dodge::GetSingleton()->react_to_attack(actor);
 			break;
 		case "attackStop"_h:
 		case "bashStop"_h:
@@ -113,6 +107,12 @@ namespace hooks
 		case "DodgeStop"_h:
 			dodge::GetSingleton()->set_dodge_phase(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>(), false);
 			break;
+		case "blockStartOut"_h:
+			Block::GetSingleton()->attempt_start_perfect_block(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
+			break;
+		case "blockStop"_h:
+			Block::GetSingleton()->attempt_end_perfect_block(const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>());
+			break;
 		}
 	}
 
@@ -130,7 +130,7 @@ namespace hooks
 
 	ptr_CombatPath on_combatBehavior_backoff_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		switch (settings::iDodgeFramework) {
+		switch (settings::iDodgeAI_Framework) {
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_back);
 			break;
@@ -144,7 +144,7 @@ namespace hooks
 
 	ptr_CombatPath on_combatBehavior_circle_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		switch (settings::iDodgeFramework) {
+		switch (settings::iDodgeAI_Framework) {
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_horizontal);
 			break;
@@ -159,7 +159,7 @@ namespace hooks
 
 	ptr_CombatPath on_combatBehavior_fallback_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		switch (settings::iDodgeFramework) {
+		switch (settings::iDodgeAI_Framework) {
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_back);
 			break;
@@ -173,7 +173,7 @@ namespace hooks
 
 	ptr_CombatPath on_combatBehavior_dodgethreat_createPath::create_path(RE::Actor* a_actor, RE::NiPoint3* a_newPos, float a3, int speed_ind)
 	{
-		switch (settings::iDodgeFramework) {
+		switch (settings::iDodgeAI_Framework) {
 		case 0:
 			dodge::GetSingleton()->attempt_dodge(a_actor, &dodge_directions_tk_all, true);
 			break;
@@ -201,9 +201,9 @@ namespace hooks
 		RE::Actor* attacker = hitData.aggressor.get().get();
 		if (attacker) {
 			RE::ActorHandle handle;
-			if (settings::bPerilous_attack_enable && perilous::GetSingleton()->is_perilous_attacking(attacker, handle)) {
+			if (settings::bPerilousAttack_Enable && perilous::GetSingleton()->is_perilous_attacking(attacker, handle)) {
 				stagger(attacker, victim);
-			} else if (settings::bPerilous_bash_enable) {
+			} else if (settings::bPerilousBash_Enable) {
 				if (!victim->IsPlayerRef() && Utils::Actor::isBashing(attacker) && Utils::Actor::isBashing(victim)) {
 					AnimSpeedManager::revertAnimSpeed(victim->GetHandle());
 					stagger(attacker, victim, 10);
@@ -222,7 +222,7 @@ namespace hooks
 		}
 		float angleDelta = Utils::math::NormalRelativeAngle(a_angle - a_actor->data.angle.z);
 		/* Attack commitment */
-		if (settings::bNPCCommitment_enable && a_actor->IsAttacking()) { 
+		if (settings::bNPCCommitment_Enable && a_actor->IsAttacking()) { 
 			switch (AttackState::GetSingleton()->get_atk_state(a_actor->GetHandle())) {
 			case AttackState::atk_state::kStart:
 				angleDelta *= settings::fNPCCommitment_AttackStartMult;
@@ -236,7 +236,7 @@ namespace hooks
 			}
 		}
 		/* Dodge commitment */
-		if (settings::bDodgeAI_enable && dodge::GetSingleton()->get_is_dodging(a_actor)) {  
+		if (settings::bDodgeAI_Enable && dodge::GetSingleton()->get_is_dodging(a_actor)) {  
 			angleDelta = 0;
 		}
 		a_angle = a_actor->data.angle.z + angleDelta;
