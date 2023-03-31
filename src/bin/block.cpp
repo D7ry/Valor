@@ -24,18 +24,21 @@ void Block::attempt_start_perfect_block(RE::Actor* a_actor)
 		}
 	}
 
-	success = true; // true by default for testing
+	//success = true; // true by default for testing
 	
 	if (success) { // flag gv, valhalla combat will handle the rest
 		a_actor->SetGraphVariableBool(gv_bool_force_timed_blocking, true);
 		a_actor->SetGraphVariableBool(gv_bool_force_perfect_blocking, true);
 	}
 	
+	// todo: add a timer
+
 	if (success) { // play effects
 		// todo: use perfect block's own vfx
 		perilous::GetSingleton()->play_perilous_attack_sfx(a_actor, perilous::PERILOUS_TYPE::blue);
 		perilous::GetSingleton()->play_perilous_attack_vfx(a_actor, perilous::PERILOUS_TYPE::blue);
 	}
+
 }
 
 void Block::attempt_end_perfect_block(RE::Actor* a_actor)

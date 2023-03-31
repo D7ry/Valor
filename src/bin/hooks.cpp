@@ -38,14 +38,13 @@ namespace hooks
 			return;
 		}
 		std::string_view eventTag = a_event->tag.data();
-		INFO("Event: {}", eventTag);
 		RE::Actor* actor = const_cast<RE::TESObjectREFR*>(a_event->holder)->As<RE::Actor>();
 		switch (hash(eventTag.data(), eventTag.size())) {
 		case "SoundPlay.NPCHumanCombatShieldBashPower"_h:
-			if (settings::bPerilousBash_Enable) {
-				perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::blue);
-			}
-			break;
+			//if (settings::bPerilousBash_Enable) {
+			//	perilous::GetSingleton()->attempt_start_perilous_attack(actor, perilous::PERILOUS_TYPE::blue);
+			//}
+			//break;
 		case "preHitFrame"_h:
 			if (AttackState::GetSingleton()->get_atk_state(actor->GetHandle()) != AttackState::atk_state::kMid) {  //none, end => start
 				AttackState::GetSingleton()->set_atk_state(actor->GetHandle(), AttackState::AttackState::kStart);

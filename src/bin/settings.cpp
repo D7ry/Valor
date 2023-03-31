@@ -12,10 +12,10 @@ void settings::read()
 	reader.FETCH(bDodgeAI_Reactive_enable);
 	
 	reader.FETCH(iDodgeAI_Framework);
-	reader.FETCH(iDodgeAI_DodgeDist);
-	fDodgeAI_DodgeDist2 = iDodgeAI_DodgeDist / SQRT2;
+	reader.FETCH(fDodgeAI_DodgeDist);
+	fDodgeAI_DodgeDist2 = fDodgeAI_DodgeDist / SQRT2;
 	reader.FETCH(fDodgeAI_DodgeDist_Permissible);
-	reader.FETCH(iDodgeAI_Reactive_Dist);
+	reader.FETCH(fDodgeAI_Reactive_Dist);
 	reader.FETCH(fDodgeAI_Chance_Mult);
 	
 	reader.FETCH(bDodgeAI_DebugDraw_Enable);
@@ -36,6 +36,10 @@ void settings::read()
 	reader.FETCH(fNPCCommitment_AttackStartMult);
 	reader.FETCH(fNPCCommitment_AttackMidMult);
 	reader.FETCH(fNPCCommitment_AttackEndMult);
+
+	reader.setActiveSection("PerfectBlock");
+	reader.FETCH(bPerfectBlock_enable);
+	reader.FETCH(fPerfectBlock_chance_mult);
 
 
 	reader.log();
