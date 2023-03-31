@@ -1,6 +1,7 @@
 #include "block.h"
 #include "settings.h"
 #include "perilous.h"
+#include "APIHandler.h"
 float get_block_chance(RE::Actor* a_actor)
 {
 	if (a_actor->GetActorRuntimeData().combatController) {
@@ -14,6 +15,11 @@ float get_block_chance(RE::Actor* a_actor)
 
 void Block::attempt_start_perfect_block(RE::Actor* a_actor)
 {
+	if (API::ValhallaCombat_API_acquired) {
+		if (API::_ValhallaCombat_API->isActorExhausted(a_actor) || API::_ValhallaCombat_API->isActorStunned(a_actor)) {
+			return;
+		}
+	}
 	bool success = false;
 	float chance = get_block_chance(a_actor);
 	if (chance > 0.f) {
