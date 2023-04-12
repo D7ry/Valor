@@ -1,5 +1,6 @@
 #include "Utils.h"
-
+#include "bin/APIHandler.h"
+#include "bin/settings.h"
 void Utils::queueMessageBox(RE::BSFixedString a_message)
 {
 	auto factoryManager = RE::MessageDataFactoryManager::GetSingleton();
@@ -470,13 +471,19 @@ RE::TESObjectREFR* DtryUtils::rayCast::cast_ray(RE::Actor* a_actor, RE::NiPoint3
 	uint16_t collisionGroup = collisionFilterInfo >> 16;
 	pick_data.rayInput.filterInfo = (static_cast<uint32_t>(collisionGroup) << 16) | static_cast<uint32_t>(RE::COL_LAYER::kCharController);
 	/*Do*/
+
+	if (settings::bDodgeAI_DebugDraw_Enable && API::TrueHUD_API_acquired) {
+		API::_TrueHud_API->DrawArrow(rayStart, a_rayEnd, 10, 1);
+	}
 	a_actor->GetParentCell()->GetbhkWorld()->PickObject(pick_data);
 	if (pick_data.rayOutput.HasHit()) {
 		RE::NiPoint3 hitpos = rayStart + (a_rayEnd - rayStart) * pick_data.rayOutput.hitFraction;
 		if (ret_rayDist) {
 			*ret_rayDist = hitpos.GetDistance(rayStart);
 		}
-
+		if (settings::bDodgeAI_DebugDraw_Enable && API::TrueHUD_API_acquired) {
+			API::_TrueHud_API->DrawPoint(hitpos, 10, 3);
+		}
 		auto collidable = pick_data.rayOutput.rootCollidable;
 		if (collidable) {
 			RE::TESObjectREFR* ref = RE::TESHavokUtilities::FindCollidableRef(*collidable);

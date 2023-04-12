@@ -15,6 +15,9 @@ float get_block_chance(RE::Actor* a_actor)
 
 void Block::attempt_start_perfect_block(RE::Actor* a_actor)
 {
+	if (!settings::bPerfectBlock_enable) {
+		return;
+	}
 	if (API::ValhallaCombat_API_acquired) {
 		if (API::_ValhallaCombat_API->isActorExhausted(a_actor) || API::_ValhallaCombat_API->isActorStunned(a_actor)) {
 			return;

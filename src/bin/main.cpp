@@ -22,6 +22,7 @@ void MessageHandler(SKSE::MessagingInterface::Message* a_msg)
 			hooks::on_combatBehavior_fallback_createPath::install();
 		}
 		AnimSpeedManager::init();
+		settings::init();
 		break;
 	case SKSE::MessagingInterface::kPostLoad:
 		API::init();

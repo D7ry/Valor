@@ -5,6 +5,7 @@ class settings
 {
 public:
 	static void read();
+	static void init();
 
 	/*Perilous attack*/
 	inline static bool bPerilousAttack_Enable = true;

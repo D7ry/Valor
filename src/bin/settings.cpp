@@ -45,3 +45,23 @@ void settings::read()
 	reader.log();
 	
 }
+
+bool RegisterForSettingUpdate(std::string a_mod, std::function<void()> a_callback)
+{
+	static auto dMenu = GetModuleHandle("dmenu");
+	using _RegisterForSettingUpdate = bool (*)(std::string, std::function<void()>);
+	static auto func = reinterpret_cast<_RegisterForSettingUpdate>(GetProcAddress(dMenu, "RegisterForSettingUpdate"));
+	if (func) {
+		return func(a_mod, a_callback);
+	}
+	return false;
+}
+
+void settings::init()
+{
+	if (RegisterForSettingUpdate("Valor", settings::read)) {
+		logger::info("Registered for setting update"sv);
+	} else {
+		logger::error("Failed to register for setting update"sv);
+	}
+}
