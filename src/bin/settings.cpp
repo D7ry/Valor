@@ -10,6 +10,7 @@ void settings::read()
 	reader.FETCH(bDodgeAI_Enable);
 	reader.FETCH(bDodgeAI_Passive_enable);
 	reader.FETCH(bDodgeAI_Reactive_enable);
+	reader.FETCH(bDodgeAI_AttackCancel_enable);
 	
 	reader.FETCH(iDodgeAI_Framework);
 	reader.FETCH(fDodgeAI_DodgeDist);
@@ -46,22 +47,34 @@ void settings::read()
 	
 }
 
-bool RegisterForSettingUpdate(std::string a_mod, std::function<void()> a_callback)
-{
-	static auto dMenu = GetModuleHandle("dmenu");
-	using _RegisterForSettingUpdate = bool (*)(std::string, std::function<void()>);
-	static auto func = reinterpret_cast<_RegisterForSettingUpdate>(GetProcAddress(dMenu, "RegisterForSettingUpdate"));
-	if (func) {
-		return func(a_mod, a_callback);
-	}
-	return false;
-}
-
 void settings::init()
 {
-	if (RegisterForSettingUpdate("Valor", settings::read)) {
-		logger::info("Registered for setting update"sv);
-	} else {
-		logger::error("Failed to register for setting update"sv);
+	update_handler::Register();
+}
+
+inline EventResult settings::update_handler::ProcessEvent(const SKSE::ModCallbackEvent* a_event, RE::BSTEventSource<SKSE::ModCallbackEvent>* a_eventSource)
+{
+	if (!a_event) {
+		return EventResult::kContinue;
 	}
+	if (a_event->eventName == "dmenu_updateSettings" && a_event->strArg == "Valor") {
+		settings::read();
+	}
+
+	return EventResult::kContinue;
+}
+
+inline bool settings::update_handler::Register()
+{
+	static update_handler singleton;
+
+	auto eventSource = SKSE::GetModCallbackEventSource();
+
+	if (!eventSource) {
+		ERROR("EventSource not found!");
+		return false;
+	}
+	eventSource->AddEventSink(&singleton);
+	INFO("Register {}", typeid(singleton).name());
+	return true;
 }

@@ -1,9 +1,17 @@
 #pragma once
 #define SQRT2 1.4142135623730950488016887242097
+using EventResult = RE::BSEventNotifyControl;
 
 class settings
 {
 public:
+	class update_handler : public RE::BSTEventSink<SKSE::ModCallbackEvent>
+	{
+	public:
+		virtual EventResult ProcessEvent(const SKSE::ModCallbackEvent* a_event, RE::BSTEventSource<SKSE::ModCallbackEvent>* a_eventSource);
+
+		static bool Register();
+	};
 	static void read();
 	static void init();
 
@@ -22,6 +30,7 @@ public:
 	inline static bool bDodgeAI_Enable = true; /*Global switch for dodge AI*/
 	inline static bool bDodgeAI_Passive_enable = true; /*Passive dodge AI that's built on top of vanilla's combat movement AI.*/
 	inline static bool bDodgeAI_Reactive_enable = true; /*Reactive dodge AI that dodges incoming attacks.*/
+	static inline bool bDodgeAI_AttackCancel_enable = false; /*Cancel attack animations when dodging.*/
 	static inline int iDodgeAI_Framework = 0;            /*TKRE = 0; DMCO = 1*/
 	
 	static inline float fDodgeAI_Chance_Mult = 1; /*Chance multiplier for reactive dodge AI.*/
